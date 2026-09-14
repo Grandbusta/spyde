@@ -19,6 +19,9 @@ export interface Renderer {
   /** Full page size in points, before margins. */
   pageSize(): Size;
 
+  /** Start a new page of the same size. Subsequent drawing lands on it. */
+  addPage(): void;
+
   /**
    * Measure `content` wrapped to `maxWidth` in `style`. Layout uses this so
    * a text node's box matches exactly what drawText will paint.
@@ -28,12 +31,18 @@ export interface Renderer {
   /** Paint `content` inside `box`, wrapping to box.width. */
   drawText(content: string, style: ResolvedTextStyle, box: Rect): void;
 
+  /** Natural size of an image in points at 72 px/inch. Cached per source. */
+  imageSize(src: string | Uint8Array): Size;
+
+  /** Draw an image scaled to exactly `box`. Callers keep the aspect ratio. */
+  drawImage(src: string | Uint8Array, box: Rect): void;
+
   fillRect(rect: Rect, color: string): void;
 
   /** Push graphics state. Pair every call with restore(). */
   save(): void;
 
-  /** Clip all subsequent drawing to `rect` until the matching restore() (D1). */
+  /** Clip all subsequent drawing to `rect` until the matching restore(). */
   clip(rect: Rect): void;
 
   /** Pop graphics state. */

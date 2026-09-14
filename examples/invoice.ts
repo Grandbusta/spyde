@@ -1,28 +1,38 @@
-// Run after `npm run build`:  node examples/invoice.js   (see package.json "example")
+// The worked example from the README. Run with:  npm run example
 import { writeFile } from "node:fs/promises";
-import { render, text, padding, background, fill, row, column } from "../src/index.js";
+import { render, text, padding, fill, row, column, table } from "../src/index.js";
+
+const money = (n: number) => `€${n.toFixed(2)}`;
+
+const entries = [
+  { item: "LG Speakers", qty: 1, total: 227.99 },
+  { item: "Apple iPhone", qty: 2, total: 1999.99 },
+  { item: "USB-C Cable, 2m", qty: 3, total: 29.97 },
+];
 
 const doc = column([
-  text("Invoice #1042", { size: 20, font: "Helvetica-Bold" }),
-  padding(text("Thanks for your business"), 8),
-  background(
-    padding(
-      row([
-        fill(text("Item"), 2),
-        fill(text("Qty"), 1),
-        fill(text("Total"), 2),
-      ], { gap: 8 }),
-      { x: 12, y: 8 },
-    ),
-    "#f2f2f2",
-  ),
+  row([
+    fill(text("ACME Ltd", { size: 20, font: "Helvetica-Bold" })),
+    fill(text("Invoice #1042", { align: "right" })),
+  ]),
+  padding(text("Thanks for your business"), { y: 8 }),
+
+  table(entries, {
+    columns: [
+      { label: "Item",  key: "item",  share: 2 },
+      { label: "Qty",   key: "qty",   share: 1, align: "right" },
+      { label: "Total", key: "total", share: 2, align: "right", format: money },
+    ],
+    rowPadding: { x: 12, y: 8 },
+    header: { background: "#f2f2f2" },
+  }),
+
   padding(
     row([
-      fill(text("LG Speakers"), 2),
-      fill(text("1"), 1),
-      fill(text("€227.99"), 2),
-    ], { gap: 8 }),
-    { x: 12, y: 8 },
+      text("Total due", { font: "Helvetica-Bold" }),
+      text(money(entries.reduce((sum, e) => sum + e.total, 0)), { font: "Helvetica-Bold" }),
+    ], { justify: "between" }),
+    { top: 16 },
   ),
 ], { gap: 4 });
 

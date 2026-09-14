@@ -40,13 +40,13 @@ test("deflate: infinite max stays infinite", () => {
   assert.equal(c.maxHeight, INFINITY);
 });
 
-// D1: the overflow rule. A node never reports a size outside its constraints.
+// The overflow rule. A node never reports a size outside its constraints.
 test("constrain: a size that fits comes back unchanged", () => {
   const c = loose({ width: 100, height: 100 });
   assert.deepEqual(constrain(c, { width: 40, height: 30 }), { width: 40, height: 30 });
 });
 
-test("constrain: oversize content is clamped to the maximum (D1, no throw)", () => {
+test("constrain: oversize content is clamped to the maximum (no throw)", () => {
   const c = loose({ width: 100, height: 100 });
   assert.deepEqual(constrain(c, { width: 250, height: 999 }), { width: 100, height: 100 });
 });

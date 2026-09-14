@@ -1,4 +1,4 @@
-/** All numbers are PDF points, 1/72 inch (D5). */
+/** All numbers are PDF points, 1/72 inch. */
 
 export interface Size {
   readonly width: number;

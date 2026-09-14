@@ -11,7 +11,7 @@ import { fakeContexts } from "../fakeRenderer.js";
 // Fake measurer: size 10 -> 5pt per char, 12pt per line (lineHeight 1.2).
 const s10 = { size: 10 };
 
-test("text: bounded width takes the full width and wraps (D11)", () => {
+test("text: bounded width takes the full width and wraps", () => {
   const { layoutCtx } = fakeContexts();
   // "hello world" = 55pt; max 30 -> two lines
   const node = new TextNode("hello world", s10);
@@ -40,7 +40,7 @@ test("text: draws into the box computed in layout", () => {
   }
 });
 
-test("text: style resolves node over render default over library default (D2)", () => {
+test("text: style resolves node over render default over library default", () => {
   const { layoutCtx, paintCtx, renderer } = fakeContexts({ defaultStyle: { font: "Inter", size: 11, color: "#333" } });
   const node = new TextNode("x", { size: 20 });
   node.layout(loose({ width: 100, height: 100 }), layoutCtx);
@@ -54,7 +54,7 @@ test("text: style resolves node over render default over library default (D2)", 
   }
 });
 
-test("text: too tall for its box reports the max height and clips (D1)", () => {
+test("text: too tall for its box reports the max height and clips", () => {
   const { layoutCtx, paintCtx, renderer } = fakeContexts();
   // three lines of 12 = 36, but only 20 allowed
   const node = new TextNode("a\nb\nc", s10);
@@ -87,4 +87,19 @@ test("text inside fill takes the fill's width and wraps inside it", () => {
   if (first.op === "text") assert.deepEqual(first.box, { x: 0, y: 0, width: 50, height: 24 });
   const second = renderer.calls[1]!;
   if (second.op === "text") assert.deepEqual(second.box, { x: 50, y: 0, width: 50, height: 12 });
+});
+
+test("text: repeated layout with the same width and style measures once per render", () => {
+  const { layoutCtx } = fakeContexts();
+  let calls = 0;
+  const counting = { ...layoutCtx, measureText: (c: string, s: Parameters<typeof layoutCtx.measureText>[1], w: number) => { calls++; return layoutCtx.measureText(c, s, w); } };
+  const node = new TextNode("hello world", s10);
+  const c = loose({ width: 100, height: 500 });
+  node.layout(c, counting);
+  node.layout(c, counting);
+  node.layout(loose({ width: 30, height: 500 }), counting);   // a different width is a new measurement
+  assert.equal(calls, 2);
+  const fresh = { ...counting };                               // a new render context starts clean
+  node.layout(c, fresh);
+  assert.equal(calls, 3);
 });

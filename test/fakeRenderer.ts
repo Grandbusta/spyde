@@ -8,6 +8,8 @@ import type { ResolvedTextStyle, TextStyle } from "../src/core/style.js";
 export type Call =
   | { op: "text"; content: string; style: ResolvedTextStyle; box: Rect }
   | { op: "fillRect"; rect: Rect; color: string }
+  | { op: "image"; src: string | Uint8Array; box: Rect }
+  | { op: "page" }
   | { op: "save" }
   | { op: "clip"; rect: Rect }
   | { op: "restore" };
@@ -23,11 +25,25 @@ export class FakeRenderer implements Renderer {
   static readonly CHAR_WIDTH = 0.5;
 
   readonly calls: Call[] = [];
+  /** Natural sizes for image sources. Unlisted sources are 100×50. */
+  readonly images = new Map<string | Uint8Array, Size>();
 
   constructor(private readonly page: Size = { width: 595.28, height: 841.89 }) {}
 
   pageSize(): Size {
     return this.page;
+  }
+
+  addPage(): void {
+    this.calls.push({ op: "page" });
+  }
+
+  imageSize(src: string | Uint8Array): Size {
+    return this.images.get(src) ?? { width: 100, height: 50 };
+  }
+
+  drawImage(src: string | Uint8Array, box: Rect): void {
+    this.calls.push({ op: "image", src, box });
   }
 
   measureText(content: string, style: ResolvedTextStyle, maxWidth: number): TextMetrics {
@@ -91,6 +107,7 @@ export function fakeContexts(
   const renderer = new FakeRenderer(options.page);
   const layoutCtx: LayoutContext = {
     measureText: (c, s, w) => renderer.measureText(c, s, w),
+    imageSize: (src) => renderer.imageSize(src),
     defaultStyle: options.defaultStyle,
   };
   const paintCtx: PaintContext = { renderer };

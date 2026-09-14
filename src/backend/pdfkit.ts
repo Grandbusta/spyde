@@ -3,13 +3,23 @@ import type { Rect, Size } from "../core/geometry.js";
 import { BUILTIN_FONTS, type ResolvedTextStyle } from "../core/style.js";
 import type { Renderer, TextMetrics } from "./renderer.js";
 
+/**
+ * PDFKit only understands Node Buffers and file paths. Callers may pass any
+ * Uint8Array (the standard byte type in every runtime); this wraps it without
+ * copying. Node-only, like everything else in this file.
+ */
+function forPdfKit(src: string | Uint8Array): string | Buffer {
+  if (typeof src === "string" || Buffer.isBuffer(src)) return src;
+  return Buffer.from(src.buffer, src.byteOffset, src.byteLength);
+}
+
 /** Page size: a PDFKit preset name like "A4" or "LETTER", or [width, height] in points. */
 export type PageSize = string | [width: number, height: number];
 
 export interface PdfKitRendererOptions {
   size?: PageSize;
   /** Font name -> file path or font bytes. Registered once, usable by name in any text style. */
-  fonts?: Record<string, string | Buffer>;
+  fonts?: Record<string, string | Uint8Array>;
 }
 
 /**
@@ -28,6 +38,7 @@ const EPSILON = 0.01;
 export class PdfKitRenderer implements Renderer {
   readonly doc: PDFKit.PDFDocument;
   private readonly registered = new Set<string>();
+  private readonly imageSizes = new Map<string | Uint8Array, Size>();
 
   constructor(options: PdfKitRendererOptions = {}) {
     this.doc = new PDFDocument({
@@ -36,13 +47,32 @@ export class PdfKitRenderer implements Renderer {
       autoFirstPage: true,
     });
     for (const [name, src] of Object.entries(options.fonts ?? {})) {
-      this.doc.registerFont(name, src);
+      this.doc.registerFont(name, forPdfKit(src));
       this.registered.add(name);
     }
   }
 
   pageSize(): Size {
     return { width: this.doc.page.width, height: this.doc.page.height };
+  }
+
+  addPage(): void {
+    this.doc.addPage({ size: [this.doc.page.width, this.doc.page.height], margin: 0 });
+  }
+
+  imageSize(src: string | Uint8Array): Size {
+    const cached = this.imageSizes.get(src);
+    if (cached) return cached;
+    // openImage is a public PDFKit method that the type definitions omit.
+    const img = (this.doc as unknown as { openImage(s: string | Buffer): { width: number; height: number } })
+      .openImage(forPdfKit(src));
+    const size = { width: img.width, height: img.height };
+    this.imageSizes.set(src, size);
+    return size;
+  }
+
+  drawImage(src: string | Uint8Array, box: Rect): void {
+    this.doc.image(forPdfKit(src), box.x, box.y, { width: box.width, height: box.height });
   }
 
   measureText(content: string, style: ResolvedTextStyle, maxWidth: number): TextMetrics {
@@ -89,12 +119,17 @@ export class PdfKitRenderer implements Renderer {
     this.doc.restore();
   }
 
-  /** End the document and collect the bytes. Call once. */
-  finish(): Promise<Buffer> {
+  /** End the document and collect the bytes as a plain Uint8Array. Call once. */
+  finish(): Promise<Uint8Array> {
     return new Promise((resolve, reject) => {
-      const chunks: Buffer[] = [];
-      this.doc.on("data", (chunk: Buffer) => chunks.push(chunk));
-      this.doc.on("end", () => resolve(Buffer.concat(chunks)));
+      const chunks: Uint8Array[] = [];
+      this.doc.on("data", (chunk: Uint8Array) => chunks.push(chunk));
+      this.doc.on("end", () => {
+        const out = new Uint8Array(chunks.reduce((n, c) => n + c.byteLength, 0));
+        let offset = 0;
+        for (const c of chunks) { out.set(c, offset); offset += c.byteLength; }
+        resolve(out);
+      });
       this.doc.on("error", reject);
       this.doc.end();
     });

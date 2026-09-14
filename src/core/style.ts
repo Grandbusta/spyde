@@ -4,7 +4,7 @@ export interface TextStyle {
   font?: string;
   /** Font size in points. */
   size?: number;
-  /** Any color string PDFKit accepts (D6). */
+  /** Any color string PDFKit accepts. */
   color?: string;
   /** Multiplier of size, e.g. 1.2. */
   lineHeight?: number;
