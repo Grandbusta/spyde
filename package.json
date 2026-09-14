@@ -1,6 +1,6 @@
 {
   "name": "spyde",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Declarative, composable PDF layout for Node on top of PDFKit. No browser.",
   "license": "MIT",
   "type": "module",
@@ -13,24 +13,44 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Grandbusta/spyde.git"
+  },
+  "homepage": "https://github.com/Grandbusta/spyde#readme",
+  "bugs": {
+    "url": "https://github.com/Grandbusta/spyde/issues"
+  },
+  "keywords": [
+    "pdf",
+    "pdfkit",
+    "layout",
+    "declarative",
+    "invoice",
+    "report",
+    "node",
+    "typescript"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsc -p tsconfig.test.json && node --test .test-out/test/",
     "clean": "rm -rf dist .test-out",
-    "example": "tsc -p tsconfig.test.json && node .test-out/examples/invoice.js"
+    "example": "tsc -p tsconfig.test.json && node .test-out/examples/invoice.js",
+    "prepublishOnly": "npm run clean && npm run build && npm test"
+  },
+  "dependencies": {
+    "pdfkit": "^0.20.2"
   },
   "devDependencies": {
     "@types/node": "^20.19.43",
     "@types/pdfkit": "^0.17.6",
     "typescript": "^7.0.2"
-  },
-  "dependencies": {
-    "pdfkit": "^0.20.2"
   }
 }
