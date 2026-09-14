@@ -1,6 +1,6 @@
 {
   "name": "@grandbusta/spyde",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Declarative, composable PDF layout for Node on top of PDFKit. No browser.",
   "license": "MIT",
   "type": "module",
