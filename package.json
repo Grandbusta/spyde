@@ -1,0 +1,36 @@
+{
+  "name": "spyde",
+  "version": "0.0.0",
+  "description": "Declarative, composable PDF layout for Node on top of PDFKit. No browser.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsc -p tsconfig.test.json && node --test .test-out/test/",
+    "clean": "rm -rf dist .test-out",
+    "example": "tsc -p tsconfig.test.json && node .test-out/examples/invoice.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@types/pdfkit": "^0.17.6",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "pdfkit": "^0.20.2"
+  }
+}
