@@ -51,7 +51,7 @@ declarative API and no framework.
 | pdfmake | Definition object | No | Medium | None |
 | **Spyde** | Composition + constraints | No | Small | None |
 
-## Install (Coming soon)
+## Install
 
 ```sh
 npm install @grandbusta/spyde
