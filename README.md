@@ -6,7 +6,7 @@ Describe a document as a tree of boxes. Spyde works out where everything goes an
 draws it with PDFKit. You never type an x or a y.
 
 ```ts
-import { render, column, row, text, padding, fill, background } from "spyde";
+import { render, column, row, text, padding, fill, background } from "@grandbusta/spyde";
 
 const doc = column([
   text("Invoice #1042", { size: 20, font: "Helvetica-Bold" }),
@@ -54,7 +54,7 @@ declarative API and no framework.
 ## Install (Coming soon)
 
 ```sh
-npm install spyde
+npm install @grandbusta/spyde
 ```
 
 PDFKit comes with it. Node 20 or newer. TypeScript types are included.
