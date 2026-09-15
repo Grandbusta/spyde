@@ -6,7 +6,7 @@ import type { ResolvedTextStyle, TextStyle } from "../src/core/style.js";
 
 /** One recorded drawing call. Tests assert on the sequence of these. */
 export type Call =
-  | { op: "text"; content: string; style: ResolvedTextStyle; box: Rect }
+  | { op: "text"; content: string; style: ResolvedTextStyle; box: Rect; lines: readonly string[] }
   | { op: "fillRect"; rect: Rect; color: string }
   | { op: "image"; src: string | Uint8Array; box: Rect }
   | { op: "page" }
@@ -51,11 +51,11 @@ export class FakeRenderer implements Renderer {
     const lineH = style.size * style.lineHeight;
     const lines = wrap(content, (s) => s.length * charW, maxWidth);
     const width = lines.reduce((m, l) => Math.max(m, l.length * charW), 0);
-    return { width, height: lines.length * lineH, lineCount: lines.length };
+    return { width, height: lines.length * lineH, lineCount: lines.length, lines };
   }
 
-  drawText(content: string, style: ResolvedTextStyle, box: Rect): void {
-    this.calls.push({ op: "text", content, style, box });
+  drawText(content: string, style: ResolvedTextStyle, box: Rect, lines: readonly string[]): void {
+    this.calls.push({ op: "text", content, style, box, lines });
   }
 
   fillRect(rect: Rect, color: string): void {

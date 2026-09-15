@@ -85,15 +85,29 @@ export class PdfKitRenderer implements Renderer {
       const lines = content.split("\n");
       let width = 0;
       for (const line of lines) width = Math.max(width, this.doc.widthOfString(line));
-      return { width, height: lines.length * lineHeight, lineCount: lines.length };
+      return { width, height: lines.length * lineHeight, lineCount: lines.length, lines };
     }
 
-    const bounds = this.doc.boundsOfString(content, { width: maxWidth, lineGap });
-    const lineCount = Math.max(1, Math.round(bounds.height / lineHeight));
-    return { width: bounds.width, height: bounds.height, lineCount };
+    // Run PDFKit's own line wrapper without drawing, collecting each line it
+    // emits. This is the path `heightOfString` uses, so the lines are exactly
+    // the ones `drawText` will paint. The document's cursor is restored after.
+    const doc = this.doc as unknown as {
+      x: number; y: number;
+      _text(text: string, x: number, y: number, options: object, lineCallback: (line: string) => void): void;
+    };
+    const { x, y } = doc;
+    const lines: string[] = [];
+    doc._text(content, x, y, { width: maxWidth, lineGap, height: Infinity }, (line) => {
+      lines.push(line.replace(/\s+$/, ""));
+    });
+    doc.x = x;
+    doc.y = y;
+    let width = 0;
+    for (const line of lines) width = Math.max(width, this.doc.widthOfString(line));
+    return { width, height: lines.length * lineHeight, lineCount: lines.length, lines };
   }
 
-  drawText(content: string, style: ResolvedTextStyle, box: Rect): void {
+  drawText(content: string, style: ResolvedTextStyle, box: Rect, _lines: readonly string[]): void {
     this.applyStyle(style);
     this.doc.text(content, box.x, box.y, {
       width: box.width + EPSILON,

@@ -43,7 +43,8 @@
     "test": "tsc -p tsconfig.test.json && node --test .test-out/test/",
     "clean": "rm -rf dist .test-out",
     "example": "tsc -p tsconfig.test.json && node .test-out/examples/invoice.js && node .test-out/examples/statement.js && node examples/statement-pdfkit.mjs",
-    "prepublishOnly": "npm run clean && npm run build && npm test"
+    "prepublishOnly": "npm run clean && npm run build && npm test",
+    "preview": "tsc -p tsconfig.test.json && node .test-out/examples/preview/server.js"
   },
   "dependencies": {
     "pdfkit": "^0.20.2"

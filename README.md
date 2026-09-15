@@ -79,7 +79,8 @@ Node 20 or newer. PDFKit comes with it. TypeScript types are included.
 Every function takes its content first and its settings second, so a call
 reads the way it works: `padding(text("Hi"), 8)` pads the text by 8.
 
-`render(tree, options?)` turns a tree into PDF bytes.
+`render(tree, options?)` turns a tree into PDF bytes. `renderHtml(tree, options?)`
+paints the same layout as an HTML fragment; see Live preview below.
 
 `row`, `column`, and `table` also take `padding`, `background`, and `margin`
 as options, so a card is one call instead of four nested ones:
@@ -137,6 +138,38 @@ await render(doc, {
 });
 ```
 
+## Live preview
+
+The same document can be painted as HTML for a page instead of as a PDF.
+Layout runs once, with PDFKit's measurements, so what the page shows is
+where the PDF puts things: the same lines, the same breaks, the same pages.
+
+```ts
+import { renderHtml } from "@grandbusta/spyde";
+
+const html = renderHtml(invoiceDocument(data));   // a fragment: one <style>, one <div> per page
+```
+
+Drop the fragment into any page. It contains no script and every value is
+escaped. Text is one element per line as PDFKit wrapped it, so the browser
+never re-wraps; positions are in points, and the page scales with CSS.
+
+For a form that edits a document live, mark the texts that show its fields:
+
+```ts
+text(invoice.number, { field: "number" })
+```
+
+The HTML carries `data-field="number"` on that element. A page can patch it
+in place as the user types, then fetch a fresh fragment after a pause so
+wrapping, new rows, and page breaks catch up. `examples/preview` is a
+complete server and page doing exactly that; `npm run preview` runs it.
+
+`renderDisplayList` returns the same layout as data, for other painters or
+for tests. Glyph shapes come from the browser's fonts, so a preview differs
+from the PDF by a hair in letterforms and in nothing else. Register a font
+file to have both draw identical glyphs.
+
 ## How it works
 
 Two passes. In the first, each box is told how much room it may have, picks
@@ -156,6 +189,7 @@ npm install
 npm run build
 npm test
 npm run example    # writes examples/*.pdf
+npm run preview    # live preview server on http://localhost:8787
 ```
 
 ## License

@@ -40,6 +40,35 @@ test("pdfkit: bounded width wraps and reports the widest line", async () => {
   assert.ok(narrow.width <= wide.width * 0.6 + 0.01);
 });
 
+test("pdfkit: measurement returns the wrapped lines, which re-join to the content", async () => {
+  const r = new PdfKitRenderer();
+  const content = "the quick brown fox jumps over the lazy dog again and again";
+  const m = r.measureText(content, style, 120);
+  assert.ok(m.lines.length >= 3, `expected several lines, got ${m.lines.length}`);
+  assert.equal(m.lineCount, m.lines.length);
+  assert.equal(m.lines.join(" ").replace(/\s+/g, " "), content);
+  for (const line of m.lines) assert.ok(r.doc.widthOfString(line) <= 120 + 0.01, `"${line}" is too wide`);
+});
+
+test("pdfkit: explicit newlines start new lines when wrapping", async () => {
+  const r = new PdfKitRenderer();
+  const m = r.measureText("one\ntwo three", style, 1000);
+  assert.deepEqual(m.lines, ["one", "two three"]);
+});
+
+test("pdfkit: height matches PDFKit's own bounds and width is the ink width (no drift from the line-callback path)", async () => {
+  const r = new PdfKitRenderer();
+  for (const [content, w] of [["hello world, this wraps a few times over", 90], ["short", 500]] as const) {
+    const m = r.measureText(content, style, w);
+    r.doc.font(style.font).fontSize(style.size);
+    const b = r.doc.boundsOfString(content, { width: w, lineGap: style.size * style.lineHeight - r.doc.currentLineHeight(true) });
+    assert.ok(Math.abs(m.height - b.height) < 0.01, `height ${m.height} vs ${b.height}`);
+    // boundsOfString counts a wrapped line's trailing space; we measure the ink. Never wider, at most one space narrower.
+    const space = r.doc.widthOfString(" ");
+    assert.ok(m.width <= b.width + 0.01 && m.width >= b.width - space - 0.01, `width ${m.width} vs ${b.width}`);
+  }
+});
+
 test("pdfkit: unbounded width measures without wrapping", async () => {
   const r = new PdfKitRenderer();
   const m = r.measureText("a fairly long line of text that would wrap in a narrow box", style, Infinity);
@@ -51,7 +80,7 @@ test("pdfkit: drawing into a box exactly as wide as the measured text does not w
   const r = new PdfKitRenderer();
   const m = r.measureText("hello world again", style, Infinity);
   const yBefore = r.doc.y;
-  r.drawText("hello world again", style, { x: 10, y: 10, width: m.width, height: m.height });
+  r.drawText("hello world again", style, { x: 10, y: 10, width: m.width, height: m.height }, []);
   // PDFKit advances doc.y by one line per line drawn.
   const advanced = r.doc.y - 10;
   assert.ok(Math.abs(advanced - 12) < 0.05, `advanced ${advanced}, started at ${yBefore}`);
@@ -62,7 +91,7 @@ test("pdfkit: a line height tighter than the font's natural spacing still draws 
   const tight = { ...style, size: 30, lineHeight: 1.0 };   // natural Helvetica line is ~1.19 x size
   const m = r.measureText("one two\nthree", tight, 1000);
   assert.equal(m.lineCount, 2);
-  r.drawText("one two\nthree", tight, { x: 10, y: 10, width: m.width, height: m.height });
+  r.drawText("one two\nthree", tight, { x: 10, y: 10, width: m.width, height: m.height }, []);
   const advanced = r.doc.y - 10;
   assert.ok(Math.abs(advanced - 60) < 0.5, `advanced ${advanced}, expected two lines of 30`);
 });
@@ -70,7 +99,7 @@ test("pdfkit: a line height tighter than the font's natural spacing still draws 
 test("pdfkit: text taller than the page does not add a page", async () => {
   const r = new PdfKitRenderer({ size: [200, 100] });
   const lines = Array.from({ length: 40 }, (_, i) => `line ${i}`).join("\n");
-  r.drawText(lines, style, { x: 0, y: 0, width: 200, height: 100 });
+  r.drawText(lines, style, { x: 0, y: 0, width: 200, height: 100 }, []);
   const pdf = await r.finish();
   assert.equal(pageCount(pdf), 1);
 });
@@ -101,7 +130,7 @@ test("pdfkit: finish returns a PDF", async () => {
   r.fillRect({ x: 10, y: 10, width: 50, height: 20 }, "#f2f2f2");
   r.save();
   r.clip({ x: 0, y: 0, width: 100, height: 100 });
-  r.drawText("Invoice", style, { x: 10, y: 10, width: 100, height: 12 });
+  r.drawText("Invoice", style, { x: 10, y: 10, width: 100, height: 12 }, []);
   r.restore();
   const pdf = await r.finish();
   assert.equal(latin1(pdf.subarray(0, 5)), "%PDF-");

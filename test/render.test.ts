@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
-import { render, text, padding, background, fill, row, column, keep, pageBreak, image, table } from "../src/index.js";
+import { render, renderDisplayList, text, padding, background, fill, row, column, keep, pageBreak, image, table } from "../src/index.js";
 
 function latin1(pdf: Uint8Array): string {
   return Buffer.from(pdf.buffer, pdf.byteOffset, pdf.byteLength).toString("latin1");
@@ -109,4 +109,37 @@ test("render: unknown font is rejected with a helpful message", async () => {
 test("render: empty column renders a blank page without error", async () => {
   const pdf = await render(column([]));
   assert.equal(pageCount(pdf), 1);
+});
+
+test("renderDisplayList: same pages as render, and page two of a table starts with the header", () => {
+  const rows = Array.from({ length: 60 }, (_, i) => ({ item: `item ${i}`, qty: i }));
+  const doc = column([
+    text("Statement", { size: 16, field: "title" }),
+    table(rows, { columns: [{ label: "Item", key: "item" }, { label: "Qty", key: "qty" }] }),
+  ], { gap: 8 });
+  const pages = renderDisplayList(doc, { size: [300, 300], margins: 20 });
+  assert.ok(pages.length >= 2, `got ${pages.length} pages`);
+  assert.deepEqual([pages[0]!.width, pages[0]!.height], [300, 300]);
+
+  // Every page is wrapped in the content-box clip; the first text on page two is the repeated header.
+  const page2 = pages[1]!.ops[0]!;
+  assert.equal(page2.op, "clip");
+  if (page2.op === "clip") {
+    const firstText = page2.children.find((o) => o.op === "text");
+    assert.ok(firstText && firstText.op === "text");
+    if (firstText && firstText.op === "text") assert.deepEqual(firstText.lines, ["Item"]);
+  }
+  const page1 = pages[0]!.ops[0]!;
+  if (page1.op === "clip") {
+    const title = page1.children.find((o) => o.op === "text");
+    if (title && title.op === "text") assert.equal(title.style.field, "title");
+  }
+});
+
+test("renderDisplayList: page count agrees with render for the same document", async () => {
+  const lines = Array.from({ length: 120 }, (_, i) => text(`line ${i}`));
+  const doc = column(lines);
+  const pdfPages = pageCount(await render(doc, { size: [200, 120] }));
+  const listPages = renderDisplayList(doc, { size: [200, 120] }).length;
+  assert.equal(listPages, pdfPages);
 });

@@ -9,6 +9,12 @@ export interface TextStyle {
   /** Multiplier of size, e.g. 1.2. */
   lineHeight?: number;
   align?: "left" | "center" | "right";
+  /**
+   * Names the data field this text shows, for live previews: the HTML
+   * painter emits it as `data-field` so a page can patch the text in place.
+   * The PDF painter ignores it.
+   */
+  field?: string;
 }
 
 /** Every field present. What nodes and the renderer actually work with. */
@@ -18,6 +24,7 @@ export interface ResolvedTextStyle {
   readonly color: string;
   readonly lineHeight: number;
   readonly align: "left" | "center" | "right";
+  readonly field: string | undefined;
 }
 
 /** Library defaults. */
@@ -27,6 +34,7 @@ export const DEFAULT_STYLE: ResolvedTextStyle = {
   color: "#000000",
   lineHeight: 1.2,
   align: "left",
+  field: undefined,
 };
 
 /**
@@ -54,5 +62,6 @@ export function resolveStyle(
     color: node?.color ?? renderDefault?.color ?? DEFAULT_STYLE.color,
     lineHeight: node?.lineHeight ?? renderDefault?.lineHeight ?? DEFAULT_STYLE.lineHeight,
     align: node?.align ?? renderDefault?.align ?? DEFAULT_STYLE.align,
+    field: node?.field ?? renderDefault?.field,
   };
 }

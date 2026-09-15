@@ -19,6 +19,7 @@ export class TextNode implements Node {
   private resolved: ResolvedTextStyle = DEFAULT_STYLE;
   private size: Size = ZERO_SIZE;
   private overflowing = false;
+  private lines: readonly string[] = [];
   /**
    * Measurements by width and style. A node is laid out more than once when
    * a row stretches it or a column paginates, and measuring is the one
@@ -45,6 +46,7 @@ export class TextNode implements Node {
     this.resolved = resolveStyle(this.style, ctx.defaultStyle);
     const bounded = Number.isFinite(constraints.maxWidth);
     const metrics = this.measure(ctx, constraints.maxWidth);
+    this.lines = metrics.lines;
     const wanted: Size = {
       width: bounded ? constraints.maxWidth : metrics.width,
       height: metrics.height,
@@ -74,10 +76,10 @@ export class TextNode implements Node {
     if (this.overflowing) {
       ctx.renderer.save();
       ctx.renderer.clip(box);
-      ctx.renderer.drawText(this.content, this.resolved, box);
+      ctx.renderer.drawText(this.content, this.resolved, box, this.lines);
       ctx.renderer.restore();
     } else {
-      ctx.renderer.drawText(this.content, this.resolved, box);
+      ctx.renderer.drawText(this.content, this.resolved, box, this.lines);
     }
   }
 }
