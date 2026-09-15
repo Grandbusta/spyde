@@ -57,6 +57,16 @@ test("pdfkit: drawing into a box exactly as wide as the measured text does not w
   assert.ok(Math.abs(advanced - 12) < 0.05, `advanced ${advanced}, started at ${yBefore}`);
 });
 
+test("pdfkit: a line height tighter than the font's natural spacing still draws every line", async () => {
+  const r = new PdfKitRenderer();
+  const tight = { ...style, size: 30, lineHeight: 1.0 };   // natural Helvetica line is ~1.19 x size
+  const m = r.measureText("one two\nthree", tight, 1000);
+  assert.equal(m.lineCount, 2);
+  r.drawText("one two\nthree", tight, { x: 10, y: 10, width: m.width, height: m.height });
+  const advanced = r.doc.y - 10;
+  assert.ok(Math.abs(advanced - 60) < 0.5, `advanced ${advanced}, expected two lines of 30`);
+});
+
 test("pdfkit: text taller than the page does not add a page", async () => {
   const r = new PdfKitRenderer({ size: [200, 100] });
   const lines = Array.from({ length: 40 }, (_, i) => `line ${i}`).join("\n");

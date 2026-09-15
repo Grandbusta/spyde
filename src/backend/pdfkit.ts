@@ -97,7 +97,7 @@ export class PdfKitRenderer implements Renderer {
     this.applyStyle(style);
     this.doc.text(content, box.x, box.y, {
       width: box.width + EPSILON,
-      height: box.height + EPSILON,   // `height` makes PDFKit stop instead of adding a page
+      height: box.height + this.doc.currentLineHeight(true) + EPSILON,
       align: style.align,
       lineGap: this.lineGapFor(style),
     });
