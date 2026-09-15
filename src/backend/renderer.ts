@@ -8,6 +8,12 @@ export interface TextMetrics {
   /** Total height of all wrapped lines, including line spacing. */
   readonly height: number;
   readonly lineCount: number;
+  /**
+   * The lines exactly as the renderer wrapped them. A painter that cannot
+   * wrap for itself (HTML, the recording renderer) draws these, so what is
+   * shown is what was measured.
+   */
+  readonly lines: readonly string[];
 }
 
 /**
@@ -19,21 +25,34 @@ export interface Renderer {
   /** Full page size in points, before margins. */
   pageSize(): Size;
 
+  /** Start a new page of the same size. Subsequent drawing lands on it. */
+  addPage(): void;
+
   /**
    * Measure `content` wrapped to `maxWidth` in `style`. Layout uses this so
    * a text node's box matches exactly what drawText will paint.
    */
   measureText(content: string, style: ResolvedTextStyle, maxWidth: number): TextMetrics;
 
-  /** Paint `content` inside `box`, wrapping to box.width. */
-  drawText(content: string, style: ResolvedTextStyle, box: Rect): void;
+  /**
+   * Paint `content` inside `box`. `lines` is how `measureText` wrapped it;
+   * a renderer that wraps for itself (PDFKit) may ignore them and will
+   * produce the same lines, one that cannot must draw them as given.
+   */
+  drawText(content: string, style: ResolvedTextStyle, box: Rect, lines: readonly string[]): void;
+
+  /** Natural size of an image in points at 72 px/inch. Cached per source. */
+  imageSize(src: string | Uint8Array): Size;
+
+  /** Draw an image scaled to exactly `box`. Callers keep the aspect ratio. */
+  drawImage(src: string | Uint8Array, box: Rect): void;
 
   fillRect(rect: Rect, color: string): void;
 
   /** Push graphics state. Pair every call with restore(). */
   save(): void;
 
-  /** Clip all subsequent drawing to `rect` until the matching restore() (D1). */
+  /** Clip all subsequent drawing to `rect` until the matching restore(). */
   clip(rect: Rect): void;
 
   /** Pop graphics state. */

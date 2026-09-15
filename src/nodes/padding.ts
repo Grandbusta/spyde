@@ -10,7 +10,7 @@ import type { LayoutContext, Node, PaintContext } from "../core/node.js";
  *
  * Layout: shrink the constraints by the insets, lay out the child, then
  * report child size plus insets. If the parent's box is too small to hold
- * even the insets, the child gets zero space and the padding clips (D1).
+ * even the insets, the child gets zero space and the padding clips.
  */
 export class PaddingNode implements Node {
   private readonly insets: ResolvedInsets;

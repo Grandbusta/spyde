@@ -53,7 +53,7 @@ export function deflate(c: Constraints, insets: ResolvedInsets): Constraints {
 
 /**
  * Clamp a size into the constraints. This is the single place the overflow
- * rule (D1) is enforced: a node computes what it wants, then passes it
+ * rule is enforced: a node computes what it wants, then passes it
  * through here before returning, so the result always satisfies its parent.
  */
 export function constrain(c: Constraints, size: Size): Size {

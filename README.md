@@ -1,55 +1,54 @@
 # Spyde
 
-Declarative PDF layout for Node, on top of PDFKit. No browser.
+Declarative PDF layout for Node. No browser.
 
-Describe a document as a tree of boxes. Spyde works out where everything goes and
-draws it with PDFKit. You never type an x or a y.
+Describe a document as a tree of boxes. Spyde works out where everything goes,
+breaks it across pages, and draws it with PDFKit. You never type an x or a y.
 
 ```ts
-import { render, column, row, text, padding, fill, background } from "@grandbusta/spyde";
+import { render, column, row, text, fill, table } from "@grandbusta/spyde";
+
+const money = (n: number) => `€${n.toFixed(2)}`;
+const entries = [
+  { item: "LG Speakers",  qty: 1, total: 227.99 },
+  { item: "Apple iPhone", qty: 2, total: 1999.99 },
+];
 
 const doc = column([
-  text("Invoice #1042", { size: 20, font: "Helvetica-Bold" }),
-  padding(text("Thanks for your business"), 8),
-  background(
-    padding(
-      row([
-        fill(text("Item")),
-        fill(text("Qty")),
-        fill(text("Total"), 2),
-      ], { gap: 8 }),
-      { x: 12, y: 8 },
-    ),
-    "#f2f2f2",
-  ),
-], { gap: 4 });
+  row([
+    fill(text("ACME Ltd", { size: 20, font: "Helvetica-Bold" })),
+    fill(text("Invoice #1042", { align: "right" })),
+  ]),
+  table(entries, {
+    columns: [
+      { label: "Item",  key: "item",  share: 2 },
+      { label: "Qty",   key: "qty",   align: "right" },
+      { label: "Total", key: "total", align: "right", format: money },
+    ],
+    rowPadding: { x: 12, y: 8 },
+    header: { background: "#f2f2f2" },
+  }),
+  row([text("Total due"), text(money(2227.98))], { justify: "between", margin: { top: 16 } }),
+], { gap: 8 });
 
-const pdf = await render(doc);          // Buffer
+const pdf = await render(doc);   // Uint8Array, ready to write or send
 ```
 
 ## Why
 
-Generating PDFs in Node forces a choice today.
+Making a PDF in Node today means one of two things. Draw it by hand with
+PDFKit, computing every coordinate and fixing them all when anything changes.
+Or write HTML and print it through a headless browser, which lays out nicely
+but ships Chromium to make a receipt: slow to start, heavy in memory, painful
+in serverless.
 
-- **Raw PDFKit** is fast and small, but you place every element by hand. Change
-  one thing and the arithmetic below it breaks.
-- **Headless Chromium** (Puppeteer and friends) lays out beautifully, but you
-  ship a browser to print a receipt: slow cold starts, hundreds of megabytes,
-  pain in serverless.
-- **react-pdf** ties you to React and JSX. **pdfmake** uses a document
-  definition object rather than composition.
+Spyde is the middle. It is a small layout engine on top of PDFKit. You get
+PDFKit's speed and footprint with a declarative API, and no framework.
 
-Spyde is the middle: a small layout engine that turns a tree of boxes into
-PDFKit drawing calls. Same speed class and footprint as PDFKit, with a
-declarative API and no framework.
-
-| | Layout model | Browser | Footprint | Lock-in |
-|---|---|---|---|---|
-| Raw PDFKit | Manual x / y | No | Small | None |
-| Puppeteer | Full CSS | Yes | Heavy | None |
-| react-pdf | JSX + flexbox | No | Medium | React |
-| pdfmake | Definition object | No | Medium | None |
-| **Spyde** | Composition + constraints | No | Small | None |
+The same two-page statement, written both ways, is in `examples/`. The Spyde
+version is about half the code of the raw PDFKit one, and the half that is
+gone is the coordinate arithmetic and the page loop, which is where the bugs
+live.
 
 ## Install
 
@@ -57,143 +56,141 @@ declarative API and no framework.
 npm install @grandbusta/spyde
 ```
 
-PDFKit comes with it. Node 20 or newer. TypeScript types are included.
+Node 20 or newer. PDFKit comes with it. TypeScript types are included.
 
-## The vocabulary
+## API
 
-Six words. That is the whole API.
-
-| Word | What it does |
+| Function | What it does |
 |---|---|
 | `text` | Puts a string on the page |
-| `padding` | Adds empty space around something |
-| `background` | Paints a color behind something |
+| `image` | Puts a picture on the page |
 | `row` | Places things side by side |
-| `column` | Stacks things top to bottom |
+| `column` | Stacks things top to bottom, continuing on the next page when full |
 | `fill` | Makes something take the leftover space in its row or column |
+| `spacer` | Takes leftover space and draws nothing |
+| `padding` | Adds space around something |
+| `background` | Paints a colour behind something |
+| `width`, `height` | Makes something exactly this wide or tall |
+| `divider` | Draws a line |
+| `table` | Rows and columns of cells, with a header that repeats on every page |
+| `keep` | Keeps something on one page |
+| `pageBreak` | Starts a new page |
 
-Every word follows one rule: **content first, settings second.** Read any line
-aloud and it describes itself. `padding(text("Hi"), 8)` is "pad this text by 8".
+Every function takes its content first and its settings second, so a call
+reads the way it works: `padding(text("Hi"), 8)` pads the text by 8.
 
-```ts
-text(content: string, style?: TextStyle)
-padding(child, insets: number | { x?, y? } | { top?, right?, bottom?, left? })
-background(child, color: string)
-fill(child, share?: number)              // share defaults to 1
-row(children: Node[], { gap?: number })
-column(children: Node[], { gap?: number })
-```
+`render(tree, options?)` turns a tree into PDF bytes. `renderHtml(tree, options?)`
+paints the same layout as an HTML fragment; see Live preview below.
 
-### How `fill` works
-
-By default an item in a row is only as wide as its content. `fill` says "take
-whatever is left over." Several fills split the leftover evenly; the share
-number changes the split.
-
-```
-row([ text("Item"), text("Qty"), text("Total") ])
-|Item|Qty|Total|                                  hugs content
-
-row([ fill(text("Item")), fill(text("Qty")), fill(text("Total")) ])
-|Item        |Qty         |Total       |          split evenly
-
-row([ fill(text("Item"), 2), fill(text("Qty")), fill(text("Total")) ])
-|Item                |Qty      |Total     |       Item gets twice the share
-```
-
-## Text and fonts
+`row`, `column`, and `table` also take `padding`, `background`, and `margin`
+as options, so a card is one call instead of four nested ones:
 
 ```ts
-interface TextStyle {
-  font?: string;        // "Helvetica" (default), any built-in, or a registered name
-  size?: number;        // points, default 12
-  color?: string;       // any color string PDFKit accepts, default "#000000"
-  lineHeight?: number;  // multiplier of size, default 1.2
-  align?: "left" | "center" | "right";
-}
+column([
+  row([text("Opening balance"), text("€1200.00")], { justify: "between" }),
+  row([text("Closing balance"), text("€1585.00")], { justify: "between" }),
+], { gap: 6, padding: 12, background: "#f2f2f2", keep: true })
 ```
 
-The fourteen PDFKit built-in fonts need no font file: Helvetica, Times-Roman,
-Courier, each in regular, bold, italic and bold-italic, plus Symbol and
-ZapfDingbats. To use your own, register it once at render time and refer to
-it by name:
+## Tables
+
+Rows are your data. Each column says which field to show and how.
+
+```ts
+table(rows, {
+  columns: [
+    { label: "Date",        key: "date",     width: 80 },
+    { label: "Description", key: "merchant" },
+    { label: "Amount",      key: "amount",   width: 80, align: "right", format: money },
+  ],
+  header: { background: "#f2f2f2" },
+  row: (r, i) => ({ background: i % 2 ? "#f7f7f7" : undefined }),   // zebra stripes
+})
+```
+
+The header repeats at the top of every page the table runs onto. Rows never
+split. `format` can return any node, so a cell can be a coloured box or an
+image when text is not enough.
+
+## Pages
+
+A column that does not fit continues on the next page, breaking between its
+children. Everything else moves whole. `keep` holds a block together;
+`pageBreak` starts a fresh page. Content that fits nowhere is clipped, never
+an error.
+
+## Text, fonts, images
+
+```ts
+text("Hello", { font: "Helvetica-Bold", size: 14, color: "#333", align: "center" })
+image("./logo.png", { width: 120 })         // height follows the aspect ratio
+```
+
+PDFKit's fourteen built-in fonts need no files. For your own, register once
+and use by name:
 
 ```ts
 await render(doc, {
-  fonts: { Inter: "./fonts/Inter-Regular.ttf" },   // path or Buffer, TTF or OTF
-  defaultStyle: { font: "Inter", size: 11 },        // applied to every text node
+  size: "A4",                                          // or "LETTER", or [width, height] in points
+  margins: 40,
+  fonts: { Inter: "./fonts/Inter-Regular.ttf" },
+  defaultStyle: { font: "Inter", size: 11 },
 });
 ```
 
-Style resolves field by field: the node's own style, then `defaultStyle`, then
-the library defaults. An unknown font name is an error with the fix in the
-message.
+## Live preview
 
-Text in a column takes the full width and wraps, like a paragraph, so `align`
-works. Text in a row that is not inside a `fill` hugs its content on one line.
-
-## Render options
+The same document can be painted as HTML for a page instead of as a PDF.
+Layout runs once, with PDFKit's measurements, so what the page shows is
+where the PDF puts things: the same lines, the same breaks, the same pages.
 
 ```ts
-interface RenderOptions {
-  size?: "A4" | "LETTER" | string | [width: number, height: number];  // default "A4"
-  margins?: number | { x?, y? } | { top?, right?, bottom?, left? };   // default 40
-  fonts?: Record<string, string | Buffer>;
-  defaultStyle?: TextStyle;
-}
+import { renderHtml } from "@grandbusta/spyde";
 
-render(tree, options?): Promise<Buffer>
+const html = renderHtml(invoiceDocument(data));   // a fragment: one <style>, one <div> per page
 ```
 
-All numbers are PDF points (1/72 inch).
+Drop the fragment into any page. It contains no script and every value is
+escaped. Text is one element per line as PDFKit wrapped it, so the browser
+never re-wraps; positions are in points, and the page scales with CSS.
 
-## Overflow
+For a form that edits a document live, mark the texts that show its fields:
 
-Spyde never throws for content that does not fit. A box that needs more room
-than it has takes what it has and clips the rest. You see the cut-off and
-adjust.
+```ts
+text(invoice.number, { field: "number" })
+```
 
-## Current scope
+The HTML carries `data-field="number"` on that element. A page can patch it
+in place as the user types, then fetch a fresh fragment after a pause so
+wrapping, new rows, and page breaks catch up. `examples/preview` is a
+complete server and page doing exactly that; `npm run preview` runs it.
 
-This is the first milestone: a single-page layout engine with the six nodes
-above. It is complete and tested for that scope.
-
-Not yet:
-
-- **Pagination.** Content taller than one page is clipped. Breaking a tree
-  across pages, with keep-together and break-before, is the next milestone
-  and the main reason this project exists.
-- **Alignment.** Children sit at the top-left of their row or column. No
-  centering, no stretch.
-- **Fixed sizing, borders, tables, images.**
-- **Streaming output.** `render` returns a Buffer.
-
-Spyde is not an HTML or CSS engine and does not try to match browser
-rendering. It is not a PDF viewer, parser, or editor.
+`renderDisplayList` returns the same layout as data, for other painters or
+for tests. Glyph shapes come from the browser's fonts, so a preview differs
+from the PDF by a hair in letterforms and in nothing else. Register a font
+file to have both draw identical glyphs.
 
 ## How it works
 
-Two passes. In **layout**, constraints (min and max width and height) flow
-down the tree; each box picks its size within them and reports it up; each
-parent records where its children sit. In **paint**, the engine walks the
-resolved tree and issues PDFKit drawing calls at the computed positions.
+Two passes. In the first, each box is told how much room it may have, picks
+its size within that, and reports back; parents record where their children
+sit. In the second, the engine walks the finished tree and issues PDFKit
+drawing calls at the computed positions. When a column runs out of page, it
+hands back what did not fit and the next page starts with it.
 
-Text is the one place PDFKit does work during layout: it measures strings so a
-text box's size matches exactly what will be drawn. Everything else is pure
-arithmetic and is tested without generating a PDF. PDFKit is reached through a
-small interface, so the backend is swappable.
+Text is the one place PDFKit does work during layout: it measures strings so
+a box is exactly the size of what will be drawn. Everything else is
+arithmetic.
 
 ## Development
 
 ```sh
 npm install
-npm run build      # tsc -> dist/
-npm test           # node --test against compiled sources
-npm run example    # writes examples/invoice.pdf
+npm run build
+npm test
+npm run example    # writes examples/*.pdf
+npm run preview    # live preview server on http://localhost:8787
 ```
-
-Dependencies: `pdfkit` at runtime, `typescript` and two type packages for
-development. Nothing else.
 
 ## License
 

@@ -7,16 +7,16 @@ const r = new FakeRenderer();
 const style = { ...DEFAULT_STYLE, size: 10, lineHeight: 1.2 }; // 5pt per char, 12pt per line
 
 test("fake measure: single line", () => {
-  assert.deepEqual(r.measureText("hello", style, 1000), { width: 25, height: 12, lineCount: 1 });
+  assert.deepEqual(r.measureText("hello", style, 1000), { width: 25, height: 12, lineCount: 1, lines: ["hello"] });
 });
 
 test("fake measure: wraps at word boundaries", () => {
   // "hello world" = 55pt; max 30 forces two lines of 25pt each
-  assert.deepEqual(r.measureText("hello world", style, 30), { width: 25, height: 24, lineCount: 2 });
+  assert.deepEqual(r.measureText("hello world", style, 30), { width: 25, height: 24, lineCount: 2, lines: ["hello", "world"] });
 });
 
 test("fake measure: a word wider than maxWidth stays on one line", () => {
-  assert.deepEqual(r.measureText("abcdefghij", style, 10), { width: 50, height: 12, lineCount: 1 });
+  assert.deepEqual(r.measureText("abcdefghij", style, 10), { width: 50, height: 12, lineCount: 1, lines: ["abcdefghij"] });
 });
 
 test("fake measure: newline forces a break", () => {
