@@ -1,0 +1,35 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Spyde live preview</title>
+<style>
+  body { margin: 0; font: 14px system-ui, sans-serif; color: #222; display: grid; grid-template-columns: 360px 1fr; height: 100vh; }
+  form { padding: 20px; border-right: 1px solid #ddd; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #555; }
+  input, textarea { font: inherit; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; }
+  .item { display: grid; grid-template-columns: 1fr 50px 70px 28px; gap: 6px; }
+  button { font: inherit; padding: 8px 12px; border: 1px solid #333; background: #fff; border-radius: 4px; cursor: pointer; }
+  button.primary { background: #0f8a4b; color: #fff; border-color: #0f8a4b; }
+  #preview { background: #e9e9e9; overflow: auto; padding: 24px; }
+  #preview .spyde-page { margin: 0 auto 24px; box-shadow: 0 2px 12px rgba(0,0,0,.15); zoom: 0.85; }
+  #status { font-size: 12px; color: #888; }
+</style>
+
+<form id="form" onsubmit="return false">
+  <label>Invoice number <input name="number"></label>
+  <label>Date <input name="date"></label>
+  <label>Client name <input name="client.name"></label>
+  <label>Client address <textarea name="client.address" rows="2"></textarea></label>
+  <div><strong>Items</strong></div>
+  <div id="items"></div>
+  <button type="button" id="add">Add item</button>
+  <label>Notes <textarea name="notes" rows="2"></textarea></label>
+  <button type="button" class="primary" id="download">Download PDF</button>
+  <div id="status"></div>
+</form>
+<!-- The server fills this container with the exact fragment renderHtml()
+     produces for the sample invoice, so view-source shows Spyde's output as is. -->
+<div id="preview" data-sample="__SAMPLE__">
+__PREVIEW__
+</div>
+
+<script src="/app.js"></script>

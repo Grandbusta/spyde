@@ -1,6 +1,6 @@
 {
   "name": "@grandbusta/spyde",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Declarative, composable PDF layout for Node on top of PDFKit. No browser.",
   "license": "MIT",
   "type": "module",
@@ -42,8 +42,12 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsc -p tsconfig.test.json && node --test .test-out/test/",
     "clean": "rm -rf dist .test-out",
-    "example": "tsc -p tsconfig.test.json && node .test-out/examples/invoice.js",
-    "prepublishOnly": "npm run clean && npm run build && npm test"
+    "example": "tsc -p tsconfig.test.json && node .test-out/examples/invoice.js && node .test-out/examples/statement.js",
+    "prepublishOnly": "npm run clean && npm run build && npm test",
+    "preview": "tsc -p tsconfig.test.json && node .test-out/examples/preview/server.js",
+    "docs:dev": "npm --prefix docs run dev",
+    "docs:build": "npm --prefix docs run build",
+    "docs:preview": "npm --prefix docs run preview"
   },
   "dependencies": {
     "pdfkit": "^0.20.2"

@@ -39,7 +39,7 @@ test("padding: no clipping when everything fits", () => {
   assert.deepEqual(renderer.ops(), ["fillRect"]);
 });
 
-test("padding: insets larger than the box clip instead of throwing (D1)", () => {
+test("padding: insets larger than the box clip instead of throwing", () => {
   const { layoutCtx, paintCtx, renderer } = fakeContexts();
   const child = new FixedBox({ width: 40, height: 20 });
   const node = new PaddingNode(child, 30);

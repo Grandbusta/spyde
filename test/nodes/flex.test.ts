@@ -99,7 +99,7 @@ test("row: only fill children take the whole width", () => {
   assert.equal(f.lastSize?.width, 300);
 });
 
-test("row: fixed children wider than the row clip instead of throwing (D1)", () => {
+test("row: fixed children wider than the row clip instead of throwing", () => {
   const { layoutCtx, paintCtx, renderer } = fakeContexts();
   const f = new FixedBox({ width: 5, height: 10 }, "fill");
   const row = new RowNode([

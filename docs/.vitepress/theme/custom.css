@@ -1,0 +1,40 @@
+/* Spyde brand: wine, flat. No gradients anywhere. Light and dark palettes resolve as a set. */
+:root {
+  --vp-c-brand-1: #8b1e3f;
+  --vp-c-brand-2: #a1264a;
+  --vp-c-brand-3: #b53257;
+  --vp-c-brand-soft: rgba(139, 30, 63, 0.14);
+
+  --vp-c-tip-1: var(--vp-c-brand-1);
+  --vp-c-tip-2: var(--vp-c-brand-2);
+  --vp-c-tip-3: var(--vp-c-brand-3);
+  --vp-c-tip-soft: var(--vp-c-brand-soft);
+
+  --vp-home-hero-name-color: var(--vp-c-brand-1);
+  --vp-home-hero-image-background-image: none;
+
+  --vp-button-brand-bg: var(--vp-c-brand-1);
+  --vp-button-brand-hover-bg: var(--vp-c-brand-2);
+  --vp-button-brand-active-bg: var(--vp-c-brand-3);
+}
+
+.dark {
+  --vp-c-brand-1: #e0788f;
+  --vp-c-brand-2: #e98fa3;
+  --vp-c-brand-3: #f0a6b6;
+  --vp-c-brand-soft: rgba(224, 120, 143, 0.18);
+}
+
+/* Example tabs: Code / Result. CSS only, driven by radio inputs. */
+.tabs { margin: 8px 0 32px; }
+.tabs > input { position: absolute; opacity: 0; pointer-events: none; }
+.tabs > label { display: inline-block; padding: 6px 14px; margin-right: 4px; font-size: 14px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 2px solid transparent; cursor: pointer; }
+.tabs > label:hover { color: var(--vp-c-text-1); }
+.tabs > input:checked + label { color: var(--vp-c-brand-1); border-bottom-color: var(--vp-c-brand-1); }
+.tabs > input:focus-visible + label { outline: 2px solid var(--vp-c-brand-1); outline-offset: 2px; }
+.tabs > .panel { display: none; border-top: 1px solid var(--vp-c-divider); padding-top: 12px; }
+.tabs > input:nth-of-type(1):checked ~ .panel:nth-of-type(1),
+.tabs > input:nth-of-type(2):checked ~ .panel:nth-of-type(2) { display: block; }
+.tabs .panel > div[class*="language-"] { margin: 0; }
+.tabs .panel img { display: block; width: 100%; max-width: 100%; height: auto; border: 1px solid var(--vp-c-divider); background: #fff; }
+.tabs .panel p { margin: 0; }

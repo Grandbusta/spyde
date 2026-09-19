@@ -17,7 +17,7 @@ export class BackgroundNode implements Node {
   layout(constraints: Constraints, ctx: LayoutContext): Size {
     // The child is already constrained, so this constrain() is a no-op for a
     // well-behaved child. It stays as a guard so a misbehaving child cannot
-    // push an oversize box up the tree (D1).
+    // push an oversize box up the tree.
     this.size = constrain(constraints, this.child.layout(constraints, ctx));
     return this.size;
   }
