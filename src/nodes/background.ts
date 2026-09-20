@@ -12,7 +12,7 @@ import type { LayoutContext, Node, PaintContext } from "../core/node.js";
 export class BackgroundNode implements Node {
   private size: Size = ZERO_SIZE;
 
-  constructor(private readonly child: Node, private readonly color: string) {}
+  constructor(readonly child: Node, readonly color: string) {}
 
   layout(constraints: Constraints, ctx: LayoutContext): Size {
     // The child is already constrained, so this constrain() is a no-op for a

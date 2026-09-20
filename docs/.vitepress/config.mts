@@ -26,6 +26,7 @@ export default defineConfig({
           { text: "Live preview", link: "/guide/live-preview" },
           { text: "Examples", link: "/guide/examples" },
           { text: "How it works", link: "/guide/how-it-works" },
+          { text: "Using Spyde with an AI assistant", link: "/guide/for-llms" },
         ],
       },
       {

@@ -12,9 +12,9 @@ export class SizedNode implements Node {
   private size: Size = ZERO_SIZE;
 
   constructor(
-    private readonly child: Node,
-    private readonly axis: "width" | "height",
-    private readonly points: number,
+    readonly child: Node,
+    readonly axis: "width" | "height",
+    readonly points: number,
   ) {}
 
   layout(constraints: Constraints, ctx: LayoutContext): Size {

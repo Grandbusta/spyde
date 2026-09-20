@@ -6,6 +6,8 @@ export {
   keep, pageBreak, image, spacer, divider, width, height, table,      // milestone two
 } from "./factories.js";
 export { render, renderDisplayList, renderHtml } from "./render.js";
+export { validate } from "./validate.js";
+export type { Finding, ValidateOptions } from "./validate.js";
 
 export type { RenderOptions } from "./render.js";
 export type { PageSize } from "./backend/pdfkit.js";

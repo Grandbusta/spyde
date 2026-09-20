@@ -18,7 +18,7 @@ export class PaddingNode implements Node {
   private size: Size = ZERO_SIZE;
   private overflowing = false;
 
-  constructor(private readonly child: Node, insets: Insets) {
+  constructor(readonly child: Node, insets: Insets) {
     this.insets = resolveInsets(insets);
   }
 

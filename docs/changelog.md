@@ -4,6 +4,13 @@ description: "What changed in each Spyde release, including the breaking changes
 
 # Changelog
 
+## 0.2.1
+
+- `validate(tree, options?)`: reports the mistakes that render silently wrong, with a path into the tree and a fix in each message. Checks fill and spacer placement, `justify` alongside a fill, table keys that no row has (with a suggestion), empty columns, unregistered fonts, long text directly in a row, and `padding` on a table. Never throws, never renders.
+- Documentation site at https://grandbusta.github.io/spyde/, with `llms.txt` and `llms-full.txt` for AI assistants and a page of rules for writing Spyde with one.
+- README shortened to install, one example, and a pointer to the documentation.
+- The raw PDFKit comparison example was removed from the repository.
+
 ## 0.2.0
 
 Documents are no longer limited to one page.

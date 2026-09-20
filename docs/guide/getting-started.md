@@ -6,9 +6,17 @@ description: "Install Spyde, build a one-page invoice from a tree of functions, 
 
 ## Install
 
-```sh
+::: code-group
+
+```sh [npm]
 npm install @grandbusta/spyde
 ```
+
+```sh [yarn]
+yarn add @grandbusta/spyde
+```
+
+:::
 
 Node 20 or newer. PDFKit comes with it, and it is the only runtime dependency. TypeScript types are included.
 

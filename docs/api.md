@@ -44,8 +44,14 @@ Row and column options: `gap`, `align`, `justify`, `padding`, `background`, `mar
 | `renderHtml(tree, options?)` | The same layout as an HTML fragment. Adds `imageSrc`, `classPrefix`, `stylesheet`, `pretty`. See [Live preview](/guide/live-preview). |
 | `renderDisplayList(tree, options?)` | The same layout as data: pages of `text`, `rect`, `image`, and `clip` ops. |
 
+## Checking
+
+| Function | What it does |
+|---|---|
+| `validate(tree, { fonts?, defaultStyle? })` | Walks the tree and returns findings for mistakes that would render silently wrong: a `fill` or `spacer` that is not a direct child of a row or column, `justify` alongside a fill, a table column whose key no row has or with neither key nor format, an unregistered font, long text directly in a row, `padding` on a table. Each finding has a `level`, a `path` into the tree, and a message that says what to change. Never throws, never renders. |
+
 ## Types
 
-`Node`, `TextStyle`, `Insets`, `FlexOptions`, `BoxOptions`, `Align`, `Justify`, `TableOptions`, `TableColumn`, `CellValue`, `RowAppearance`, `ImageOptions`, `DividerOptions`, `RenderOptions`, `HtmlOptions`, `PageSize`, `DisplayList`, `Page`, `Op`, `Size`, `Offset`, `Rect`.
+`Node`, `Finding`, `ValidateOptions`, `TextStyle`, `Insets`, `FlexOptions`, `BoxOptions`, `Align`, `Justify`, `TableOptions`, `TableColumn`, `CellValue`, `RowAppearance`, `ImageOptions`, `DividerOptions`, `RenderOptions`, `HtmlOptions`, `PageSize`, `DisplayList`, `Page`, `Op`, `Size`, `Offset`, `Rect`.
 
 Bytes in and out are `Uint8Array`. A Node `Buffer` is accepted anywhere bytes are.

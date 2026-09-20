@@ -119,8 +119,8 @@ export class TableNode<T> implements Splittable {
   private readonly heights: Map<Node, Map<number, number>>;
 
   constructor(
-    rows: T[],
-    private readonly options: TableOptions<T>,
+    readonly rows: T[],
+    readonly options: TableOptions<T>,
     /** Internal: a remainder reuses the already-built rows instead of rebuilding them. */
     prebuilt?: { headerRow: Node | undefined; bodyRows: Node[]; heights: Map<Node, Map<number, number>> },
   ) {

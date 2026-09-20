@@ -29,8 +29,8 @@ export class TextNode implements Node {
   private measuredFor: LayoutContext | undefined;
 
   constructor(
-    private readonly content: string,
-    private readonly style?: TextStyle,
+    readonly content: string,
+    readonly style?: TextStyle,
   ) {}
 
   /**
