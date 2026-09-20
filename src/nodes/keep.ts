@@ -9,7 +9,7 @@ import type { LayoutContext, Node, PaintContext } from "../core/node.js";
  * whole. The class exists so the intent is visible in the tree.
  */
 export class KeepNode implements Node {
-  constructor(private readonly child: Node) {}
+  constructor(readonly child: Node) {}
 
   layout(constraints: Constraints, ctx: LayoutContext): Size {
     return this.child.layout(constraints, ctx);

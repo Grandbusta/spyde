@@ -12,6 +12,8 @@ or a y.
 
 ```sh
 npm install @grandbusta/spyde
+# or
+yarn add @grandbusta/spyde
 ```
 
 Node 20 or newer. PDFKit is the only runtime dependency. TypeScript types are included.

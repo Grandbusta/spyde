@@ -6,3 +6,5 @@ PLAN.md
 docs/node_modules/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
+docs/public/llms.txt
+docs/public/llms-full.txt

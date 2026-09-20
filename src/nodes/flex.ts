@@ -75,9 +75,9 @@ export class FlexNode implements Node {
   private overflowing = false;
 
   constructor(
-    protected readonly axis: Axis,
-    protected readonly children: readonly Node[],
-    protected readonly options: FlexOptions = {},
+    readonly axis: Axis,
+    readonly children: readonly Node[],
+    readonly options: FlexOptions = {},
   ) {
     this.gap = options.gap ?? 0;
     this.align = options.align ?? "start";

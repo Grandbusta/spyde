@@ -25,8 +25,8 @@ export class ImageNode implements Node {
   private size: Size = ZERO_SIZE;
 
   constructor(
-    private readonly src: string | Uint8Array,
-    private readonly options: ImageOptions = {},
+    readonly src: string | Uint8Array,
+    readonly options: ImageOptions = {},
   ) {}
 
   layout(constraints: Constraints, ctx: LayoutContext): Size {
