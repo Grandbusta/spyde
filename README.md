@@ -1,6 +1,6 @@
 # Spyde
 
-Declarative PDF layout for Node. No browser.
+Declarative PDF layout for Node and the browser. No headless browser.
 
 Describe a document as a tree of functions. Spyde works out where everything
 goes, breaks it across pages, and draws it with PDFKit. You never type an x
@@ -14,6 +14,8 @@ or a y.
 npm install @grandbusta/spyde
 # or
 yarn add @grandbusta/spyde
+# or
+pnpm add @grandbusta/spyde
 ```
 
 Node 20 or newer. PDFKit is the only runtime dependency. TypeScript types are included.

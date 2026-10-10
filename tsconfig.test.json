@@ -7,5 +7,6 @@
     "outDir": ".test-out",
     "declaration": false
   },
-  "include": ["src", "test", "examples"]
+  "include": ["src", "test", "examples"],
+  "exclude": ["examples/nextjs"]
 }

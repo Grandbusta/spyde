@@ -1,6 +1,6 @@
 // The worked example from the README. Run with:  npm run example
 import { writeFile } from "node:fs/promises";
-import { render, text, padding, fill, row, column, table } from "../src/index.js";
+import { render, validate, text, padding, fill, row, column, table } from "../src/index.js";
 
 const money = (n: number) => `€${n.toFixed(2)}`;
 
@@ -36,11 +36,16 @@ const doc = column([
   ),
 ], { gap: 4 });
 
-const pdf = await render(doc, {
+const options = {
   size: "A4",
   margins: 40,
   defaultStyle: { font: "Helvetica", size: 11 },
-});
+  info: { title: "Invoice #1042", author: "ACME Ltd" },
+};
+
+// Check for mistakes that would render without complaint, then render.
+for (const f of validate(doc, options)) console.warn(`${f.level}: ${f.path}: ${f.message}`);
+const pdf = await render(doc, options);
 
 await writeFile("examples/invoice.pdf", pdf);
 console.log(`wrote examples/invoice.pdf (${pdf.length} bytes)`);

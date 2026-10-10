@@ -1,0 +1,14 @@
+{
+  "name": "spyde-editor",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "monaco-editor": "^0.52.2",
+    "vite": "^6.3.5"
+  }
+}

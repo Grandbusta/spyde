@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { RecordingRenderer } from "../../src/backend/recording.js";
 import { PdfKitRenderer } from "../../src/backend/pdfkit.js";
+import { nodePlatform } from "../../src/platform/node.js";
 import { DEFAULT_STYLE } from "../../src/core/style.js";
 import { loose } from "../../src/core/constraints.js";
 import type { LayoutContext, PaintContext } from "../../src/core/node.js";
@@ -10,15 +11,15 @@ import { text, column, background, padding, image } from "../../src/factories.js
 const style = { ...DEFAULT_STYLE, size: 10 };
 
 test("recording: measures exactly like the PDFKit renderer", () => {
-  const rec = new RecordingRenderer();
-  const pdf = new PdfKitRenderer();
+  const rec = new RecordingRenderer(nodePlatform);
+  const pdf = new PdfKitRenderer(nodePlatform);
   const content = "the quick brown fox jumps over the lazy dog";
   assert.deepEqual(rec.measureText(content, style, 90), pdf.measureText(content, style, 90));
   assert.deepEqual(rec.pageSize(), pdf.pageSize());
 });
 
 test("recording: a text op carries the box, the lines, and the style", () => {
-  const rec = new RecordingRenderer();
+  const rec = new RecordingRenderer(nodePlatform);
   const m = rec.measureText("one two three", style, 40);
   rec.drawText("one two three", style, { x: 10, y: 20, width: 40, height: m.height }, m.lines);
   const [page] = rec.finish();
@@ -26,7 +27,7 @@ test("recording: a text op carries the box, the lines, and the style", () => {
 });
 
 test("recording: rects and images record their boxes; field rides on the style", () => {
-  const rec = new RecordingRenderer();
+  const rec = new RecordingRenderer(nodePlatform);
   rec.fillRect({ x: 1, y: 2, width: 3, height: 4 }, "#eee");
   rec.drawImage("test/fixtures/dot.png", { x: 5, y: 6, width: 7, height: 8 });
   rec.drawText("x", { ...style, field: "number" }, { x: 0, y: 0, width: 10, height: 12 }, ["x"]);
@@ -38,7 +39,7 @@ test("recording: rects and images record their boxes; field rides on the style",
 });
 
 test("recording: save/clip/restore nests ops under the clip, later ops land outside it", () => {
-  const rec = new RecordingRenderer();
+  const rec = new RecordingRenderer(nodePlatform);
   rec.fillRect({ x: 0, y: 0, width: 1, height: 1 }, "before");
   rec.save();
   rec.clip({ x: 10, y: 10, width: 100, height: 50 });
@@ -60,7 +61,7 @@ test("recording: save/clip/restore nests ops under the clip, later ops land outs
 });
 
 test("recording: nested clips nest; a save/restore pair without a clip changes nothing", () => {
-  const rec = new RecordingRenderer();
+  const rec = new RecordingRenderer(nodePlatform);
   rec.save(); rec.clip({ x: 0, y: 0, width: 100, height: 100 });
   rec.save(); rec.clip({ x: 10, y: 10, width: 50, height: 50 });
   rec.fillRect({ x: 11, y: 11, width: 1, height: 1 }, "deep");
@@ -85,7 +86,7 @@ test("recording: nested clips nest; a save/restore pair without a clip changes n
 });
 
 test("recording: addPage starts a new page of the same size and closes any open clip", () => {
-  const rec = new RecordingRenderer({ size: [300, 400] });
+  const rec = new RecordingRenderer(nodePlatform, { size: [300, 400] });
   rec.save(); rec.clip({ x: 0, y: 0, width: 10, height: 10 });
   rec.addPage();
   rec.fillRect({ x: 0, y: 0, width: 1, height: 1 }, "p2");
@@ -97,7 +98,7 @@ test("recording: addPage starts a new page of the same size and closes any open 
 });
 
 test("recording: a small tree painted through it records what the PDF would draw", () => {
-  const rec = new RecordingRenderer();
+  const rec = new RecordingRenderer(nodePlatform);
   const layoutCtx: LayoutContext = {
     measureText: (c, s, w) => rec.measureText(c, s, w),
     imageSize: (src) => rec.imageSize(src),

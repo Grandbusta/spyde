@@ -1,23 +1,46 @@
-import PDFDocument from "pdfkit";
 import type { Rect, Size } from "../core/geometry.js";
 import { BUILTIN_FONTS, type ResolvedTextStyle } from "../core/style.js";
+import type { Platform } from "./platform.js";
 import type { Renderer, TextMetrics } from "./renderer.js";
 
 /**
- * PDFKit only understands Node Buffers and file paths. Callers may pass any
- * Uint8Array (the standard byte type in every runtime); this wraps it without
- * copying. Node-only, like everything else in this file.
+ * PDFKit reads fonts and images from a Uint8Array directly, so bytes pass
+ * straight through. A string is a file path, which only the Node platform
+ * can read; PDFKit does that itself.
  */
-function forPdfKit(src: string | Uint8Array): string | Buffer {
-  if (typeof src === "string" || Buffer.isBuffer(src)) return src;
-  return Buffer.from(src.buffer, src.byteOffset, src.byteLength);
+function forPdfKit(src: string | Uint8Array, platform: Platform): string | Uint8Array {
+  if (typeof src === "string") {
+    platform.readFile(src);   // in a browser this throws a clear error before PDFKit tries the filesystem
+    return src;
+  }
+  return src;
+}
+
+/** PDFKit takes the PDF dictionary's capitalised keys; empty values are left out. */
+function pdfInfo(info: DocumentInfo): PDFKit.DocumentInfo {
+  const out: PDFKit.DocumentInfo = {};
+  if (info.title) out.Title = info.title;
+  if (info.author) out.Author = info.author;
+  if (info.subject) out.Subject = info.subject;
+  if (info.keywords) out.Keywords = info.keywords;
+  return out;
 }
 
 /** Page size: a PDFKit preset name like "A4" or "LETTER", or [width, height] in points. */
 export type PageSize = string | [width: number, height: number];
 
+/** Document properties written into the PDF, shown by viewers under "Properties". */
+export interface DocumentInfo {
+  title?: string;
+  author?: string;
+  subject?: string;
+  /** Comma-separated, as PDF viewers expect. */
+  keywords?: string;
+}
+
 export interface PdfKitRendererOptions {
   size?: PageSize;
+  info?: DocumentInfo;
   /** Font name -> file path or font bytes. Registered once, usable by name in any text style. */
   fonts?: Record<string, string | Uint8Array>;
 }
@@ -40,14 +63,15 @@ export class PdfKitRenderer implements Renderer {
   private readonly registered = new Set<string>();
   private readonly imageSizes = new Map<string | Uint8Array, Size>();
 
-  constructor(options: PdfKitRendererOptions = {}) {
-    this.doc = new PDFDocument({
+  constructor(private readonly platform: Platform, options: PdfKitRendererOptions = {}) {
+    this.doc = new platform.PDFDocument({
       size: options.size ?? "A4",
       margin: 0,          // the layout engine owns margins, not PDFKit
       autoFirstPage: true,
+      ...(options.info ? { info: pdfInfo(options.info) } : {}),
     });
     for (const [name, src] of Object.entries(options.fonts ?? {})) {
-      this.doc.registerFont(name, forPdfKit(src));
+      this.doc.registerFont(name, forPdfKit(src, this.platform) as string | Buffer);
       this.registered.add(name);
     }
   }
@@ -64,15 +88,15 @@ export class PdfKitRenderer implements Renderer {
     const cached = this.imageSizes.get(src);
     if (cached) return cached;
     // openImage is a public PDFKit method that the type definitions omit.
-    const img = (this.doc as unknown as { openImage(s: string | Buffer): { width: number; height: number } })
-      .openImage(forPdfKit(src));
+    const img = (this.doc as unknown as { openImage(s: string | Uint8Array): { width: number; height: number } })
+      .openImage(forPdfKit(src, this.platform));
     const size = { width: img.width, height: img.height };
     this.imageSizes.set(src, size);
     return size;
   }
 
   drawImage(src: string | Uint8Array, box: Rect): void {
-    this.doc.image(forPdfKit(src), box.x, box.y, { width: box.width, height: box.height });
+    this.doc.image(forPdfKit(src, this.platform) as string | Buffer, box.x, box.y, { width: box.width, height: box.height });
   }
 
   measureText(content: string, style: ResolvedTextStyle, maxWidth: number): TextMetrics {
@@ -134,7 +158,7 @@ export class PdfKitRenderer implements Renderer {
   }
 
   /** End the document and collect the bytes as a plain Uint8Array. Call once. */
-  finish(): Promise<Uint8Array> {
+  finish(): Promise<Uint8Array<ArrayBuffer>> {
     return new Promise((resolve, reject) => {
       const chunks: Uint8Array[] = [];
       this.doc.on("data", (chunk: Uint8Array) => chunks.push(chunk));

@@ -1,16 +1,25 @@
-// The public surface. Fourteen factories, one render function, and the
-// types a user can see. Nothing else is exported; internals may change freely.
+// The public surface: the factories, the render functions, and the types a
+// user can see. Nothing else is exported; internals may change freely.
 
 export {
   text, padding, background, fill, row, column,                       // milestone one
   keep, pageBreak, image, spacer, divider, width, height, table,      // milestone two
 } from "./factories.js";
-export { render, renderDisplayList, renderHtml } from "./render.js";
+import { createSpyde } from "./render.js";
+import { nodePlatform } from "./platform/node.js";
+
+const spyde = createSpyde(nodePlatform);
+/** Lay the tree out and produce the PDF bytes. */
+export const render = spyde.render;
+/** The same layout as data: pages of text, rect, image, and clip ops. */
+export const renderDisplayList = spyde.renderDisplayList;
+/** The same layout as an HTML fragment for a live preview. */
+export const renderHtml = spyde.renderHtml;
 export { validate } from "./validate.js";
 export type { Finding, ValidateOptions } from "./validate.js";
 
 export type { RenderOptions } from "./render.js";
-export type { PageSize } from "./backend/pdfkit.js";
+export type { PageSize, DocumentInfo } from "./backend/pdfkit.js";
 export type { DisplayList, Page, Op } from "./backend/recording.js";
 export type { HtmlOptions } from "./backend/html.js";
 export type { FlexOptions, BoxOptions, Align, Justify } from "./nodes/flex.js";

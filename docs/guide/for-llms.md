@@ -25,7 +25,7 @@ const pdf = await render(doc, { fonts });
 ```md
 ## Spyde (@grandbusta/spyde)
 
-Declarative PDF layout for Node on PDFKit. A document is a tree of function calls.
+Declarative PDF layout on PDFKit, for Node and the browser. A document is a tree of function calls.
 Never compute coordinates; describe boxes and let layout place them.
 
 Rules:
@@ -47,6 +47,8 @@ Rules:
 - Nothing throws for layout reasons. Overflowing content is clipped, so check output.
 - Bold and italic are font names: "Helvetica-Bold", "Times-Italic". Custom fonts are
   registered in render options: fonts: { Inter: "./Inter.ttf" }.
+- File paths for fonts and images work only in Node. In a browser, fetch the file and
+  pass its bytes (a Uint8Array); a path throws there.
 - render(tree, options?) returns a Uint8Array. renderHtml(tree, options?) returns an
   HTML fragment of the same layout. Sizes are in PDF points.
 - Prefer box options over nested wrappers:
