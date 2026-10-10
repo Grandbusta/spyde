@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spyde editor</title>
+  <meta name="description" content="Write a Spyde template and see the PDF it produces as you type. Runs entirely in your browser.">
+  <style>
+    :root { color-scheme: light; --wine: #8b1e3f; --wine-ink: #fff; --ink: #1f1a1c; --muted: #6b5f63; --line: #e3dbdd; --panel: #fffffe; --ground: #f7f5f4; --result: #e9e5e6; --strip: #fbf7f8; --error: #b3261e; --warning: #8a5a00; --ok: #2e6b3a; --shadow: rgba(0,0,0,.15); }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) { color-scheme: dark; --wine: #d9607f; --wine-ink: #1a1214; --ink: #ece6e8; --muted: #a2969a; --line: #3a3134; --panel: #1e1e1e; --ground: #171415; --result: #232021; --strip: #221d1f; --error: #f28b82; --warning: #e3b341; --ok: #7fc48e; --shadow: rgba(0,0,0,.5); }
+    }
+    :root[data-theme="dark"] { color-scheme: dark; --wine: #d9607f; --wine-ink: #1a1214; --ink: #ece6e8; --muted: #a2969a; --line: #3a3134; --panel: #1e1e1e; --ground: #171415; --result: #232021; --strip: #221d1f; --error: #f28b82; --warning: #e3b341; --ok: #7fc48e; --shadow: rgba(0,0,0,.5); }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 14px system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: var(--ground); display: grid; grid-template-rows: auto 1fr; height: 100vh; }
+    header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+    select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink); background: var(--panel); }
+    header .brand { color: var(--wine); font-weight: 700; font-size: 16px; }
+    header .brand small { color: var(--muted); font-weight: 400; margin-left: 6px; }
+    #status { color: var(--muted); margin-left: auto; margin-right: 4px; font-variant-numeric: tabular-nums; }
+    .group { display: inline-flex; border: 1px solid var(--wine); border-radius: 4px; overflow: hidden; }
+    button { font: inherit; padding: 5px 12px; border: 0; color: var(--wine); background: var(--panel); cursor: pointer; }
+    button.solid { border: 1px solid var(--wine); border-radius: 4px; }
+    .group button + button { border-left: 1px solid var(--wine); }
+    .group button.active { background: var(--wine); color: var(--wine-ink); }
+    main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 0; }
+    .left { display: grid; grid-template-rows: auto minmax(0, 1fr) auto 180px auto; min-height: 0; border-right: 1px solid var(--line); background: var(--panel); }
+    .label { padding: 6px 16px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--ground); }
+    .label:not(:first-child) { border-top: 1px solid var(--line); }
+    #template, #data { min-height: 0; }
+    #problems { margin: 0; padding: 8px 16px; list-style: none; max-height: 160px; overflow: auto; border-top: 1px solid var(--line); background: var(--strip); font-size: 13px; }
+    #problems li { padding: 3px 0; }
+    #problems b { font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: .04em; }
+    #problems .error b { color: var(--error); }
+    #problems .warning b { color: var(--warning); }
+    #problems .ok b { color: var(--ok); }
+    #problems code { color: var(--wine); }
+    #problems .jump { cursor: pointer; }
+    #problems .jump:hover code { text-decoration: underline; }
+    .right { position: relative; overflow: auto; padding: 24px; background: var(--result); }
+    #result .spyde-page { margin: 0 auto 24px; box-shadow: 0 2px 12px var(--shadow); zoom: .8; }
+    iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--result); }
+    @media (max-width: 800px) { main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } .left { border-right: 0; border-bottom: 1px solid var(--line); } }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="brand">Spyde<small>editor</small></span>
+    <select id="example" title="Start from an example"></select>
+    <button id="run" class="solid" type="button" title="Runs on its own as you type">Run</button>
+    <span class="group">
+      <button id="show-html" type="button">Preview</button>
+      <button id="show-pdf" type="button">PDF</button>
+    </span>
+    <button id="download" class="solid" type="button" title="Save the PDF">Download</button>
+    <button id="share" class="solid" type="button" title="Copy a link that holds this template and data">Share</button>
+    <button id="copy" class="solid" type="button" title="Copy the template">Copy</button>
+    <span id="status">loading editor…</span>
+    <button id="theme" type="button" title="Switch between light and dark">Dark</button>
+  </header>
+  <main>
+    <div class="left">
+      <div class="label">Template</div>
+      <div id="template"></div>
+      <div class="label">Data</div>
+      <div id="data"></div>
+      <ul id="problems"></ul>
+    </div>
+    <div class="right">
+      <div id="result"></div>
+      <iframe id="pdf" title="Rendered PDF" hidden></iframe>
+    </div>
+  </main>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

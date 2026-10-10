@@ -14,6 +14,8 @@ const pages = [
   ["guide/tables", "Tables"],
   ["guide/text-and-images", "Text, fonts, images"],
   ["guide/live-preview", "Live preview"],
+  ["guide/browser", "In the browser"],
+  ["guide/editor", "Editor"],
   ["guide/examples", "Example"],
   ["guide/how-it-works", "How it works"],
   ["guide/for-llms", "Using Spyde with an AI assistant"],
@@ -37,9 +39,9 @@ function load(path) {
 
 const intro = `# Spyde
 
-> Declarative PDF layout for Node on top of PDFKit. Describe a document as a tree of functions; Spyde lays out the pages, breaks them, and draws them. No browser, one runtime dependency.
+> Declarative PDF layout on top of PDFKit, for Node and the browser. Describe a document as a tree of functions; Spyde lays out the pages, breaks them, and draws them. No headless browser, one runtime dependency.
 
-Install: \`npm install @grandbusta/spyde\`. Node 20 or newer. TypeScript types included.
+Install: \`npm install @grandbusta/spyde\` (or yarn, pnpm). Node 20 or newer; in a browser, through a bundler or \`dist/spyde.browser.js\` from a CDN. TypeScript types included.
 Repository: https://github.com/Grandbusta/spyde
 `;
 

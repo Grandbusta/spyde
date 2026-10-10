@@ -1,4 +1,5 @@
-import { type PageSize, PdfKitRenderer, type PdfKitRendererOptions } from "./backend/pdfkit.js";
+import { type DocumentInfo, type PageSize, PdfKitRenderer, type PdfKitRendererOptions } from "./backend/pdfkit.js";
+import type { Platform } from "./backend/platform.js";
 import { type HtmlOptions, paintHtml } from "./backend/html.js";
 import { type DisplayList, RecordingRenderer } from "./backend/recording.js";
 import type { Renderer } from "./backend/renderer.js";
@@ -16,6 +17,8 @@ export interface RenderOptions {
   fonts?: Record<string, string | Uint8Array>;
   /** Applied to every text node that does not set the field itself. */
   defaultStyle?: TextStyle;
+  /** Document properties a PDF viewer shows. Ignored by the HTML and display-list outputs. */
+  info?: DocumentInfo;
 }
 
 const DEFAULT_MARGINS = 40;
@@ -65,33 +68,40 @@ function backendOptions(options: RenderOptions): PdfKitRendererOptions {
   return {
     ...(options.size !== undefined ? { size: options.size } : {}),
     ...(options.fonts !== undefined ? { fonts: options.fonts } : {}),
+    ...(options.info !== undefined ? { info: options.info } : {}),
   };
 }
 
-/** Lay the tree out and produce the PDF bytes. */
-export async function render(tree: Node, options: RenderOptions = {}): Promise<Uint8Array> {
-  const renderer = new PdfKitRenderer(backendOptions(options));
-  layoutPages(tree, renderer, options);
-  return renderer.finish();
-}
-
 /**
- * Lay the tree out and return what would be drawn, page by page, as data.
- * Measured with PDFKit, so positions are identical to `render`'s. This is
- * what the HTML painter consumes; it is public for other painters and for
- * tests that want to inspect a layout without a PDF.
+ * The three outputs, bound to a platform. `src/index.ts` binds the Node
+ * platform; `src/index.browser.ts` binds the browser one. Same code path.
  */
-export function renderDisplayList(tree: Node, options: RenderOptions = {}): DisplayList {
-  const renderer = new RecordingRenderer(backendOptions(options));
-  layoutPages(tree, renderer, options);
-  return renderer.finish();
-}
+export function createSpyde(platform: Platform) {
+  /**
+   * Lay the tree out and produce the PDF bytes. Typed as backed by a plain
+   * ArrayBuffer (never shared memory), so `new Response(pdf)` and
+   * `new Blob([pdf])` accept the result without a cast.
+   */
+  async function render(tree: Node, options: RenderOptions = {}): Promise<Uint8Array<ArrayBuffer>> {
+    const renderer = new PdfKitRenderer(platform, backendOptions(options));
+    layoutPages(tree, renderer, options);
+    return renderer.finish();
+  }
 
-/**
- * Lay the tree out and paint it as an HTML fragment for a live preview.
- * Same layout as `render`, measured with PDFKit; only the painter differs.
- * See `HtmlOptions` for images, class prefix, and the stylesheet.
- */
-export function renderHtml(tree: Node, options: RenderOptions & HtmlOptions = {}): string {
-  return paintHtml(renderDisplayList(tree, options), options);
+  /**
+   * Lay the tree out and return what would be drawn, page by page, as data.
+   * Measured with PDFKit, so positions are identical to `render`'s.
+   */
+  function renderDisplayList(tree: Node, options: RenderOptions = {}): DisplayList {
+    const renderer = new RecordingRenderer(platform, backendOptions(options));
+    layoutPages(tree, renderer, options);
+    return renderer.finish();
+  }
+
+  /** Lay the tree out and paint it as an HTML fragment for a live preview. */
+  function renderHtml(tree: Node, options: RenderOptions & HtmlOptions = {}): string {
+    return paintHtml(renderDisplayList(tree, options), options, platform.readFile);
+  }
+
+  return { render, renderDisplayList, renderHtml };
 }

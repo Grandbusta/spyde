@@ -1,6 +1,6 @@
 # Working on Spyde
 
-Spyde is a declarative PDF layout library for Node on PDFKit. This file is for
+Spyde is a declarative PDF layout library on PDFKit, for Node and the browser. This file is for
 coding agents working on this repository. If you are *using* Spyde in another
 project, the rules you want are in the docs: https://grandbusta.github.io/spyde/guide/for-llms
 
@@ -13,7 +13,7 @@ project, the rules you want are in the docs: https://grandbusta.github.io/spyde/
 - `src/backend/`: the `Renderer` interface and its implementations. `pdfkit.ts` is the
   only file that imports pdfkit. `recording.ts` records draw calls as data; `html.ts`
   paints that data as HTML.
-- `src/factories.ts` is the public API; `src/validate.ts` checks a tree for silent mistakes; `src/index.ts` is the only public entry.
+- `src/factories.ts` is the public API; `src/validate.ts` checks a tree for silent mistakes; `src/index.ts` is the public entry for Node and `src/index.browser.ts` for browsers; they export the same API, bound to a different `Platform` (`src/platform/`).
 - `examples/` are runnable documents; `docs/` is the VitePress site (own package.json).
 
 ## Rules
@@ -24,9 +24,10 @@ project, the rules you want are in the docs: https://grandbusta.github.io/spyde/
 - Every public function takes content first, settings second. New names must be
   guessable from the word alone; no jargon.
 - Only `backend/pdfkit.ts` may import pdfkit. Public byte types are `Uint8Array`.
-- Runtime dependency is pdfkit and nothing else. Dev dependencies are typescript and
-  two type packages. Tooling that needs more lives in its own folder with its own
-  package.json (`docs/`, later `bench/`).
+- Runtime dependency is pdfkit and nothing else. Dev dependencies are typescript, two
+  type packages, and esbuild (it bundles `dist/spyde.browser.js`, the one-file browser
+  build). Tooling that needs more lives in its own folder with its own package.json
+  (`docs/`, `editor/`, later `bench/`).
 - Tests: layout logic against `test/fakeRenderer.ts` (deterministic measurer), backends
   against real PDFKit, end-to-end through `src/index.ts`. `npm test` builds first.
 - Do not cite planning-document ids in code comments or tests; explain in words.
@@ -35,8 +36,9 @@ project, the rules you want are in the docs: https://grandbusta.github.io/spyde/
 ## Commands
 
 ```sh
-npm run build      # tsc -> dist/
-npm test           # compile tests and run node --test
+npm run build      # tsc -> dist/, then the browser bundle
+npm test           # build, compile tests, and run node --test
+npm run editor:dev # the live editor
 npm run example    # write examples/*.pdf
 npm run preview    # live preview server
 npm run docs:dev   # documentation site

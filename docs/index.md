@@ -1,14 +1,18 @@
 ---
 layout: home
-description: "Spyde is declarative PDF layout for Node on top of PDFKit. Describe a document as a tree of functions; it lays out the pages and draws them. No browser."
+description: "Spyde is declarative PDF layout on top of PDFKit, for Node and the browser. Describe a document as a tree of functions; it lays out the pages and draws them. No headless browser."
 hero:
   name: Spyde
-  text: Declarative PDF layout for Node.
-  tagline: Describe a document as a tree of functions. Spyde lays it out, breaks it across pages, and draws it with PDFKit. No browser, no coordinates.
+  text: Declarative PDF layout for Node and the browser.
+  tagline: Describe a document as a tree of functions. Spyde lays it out, breaks it across pages, and draws it with PDFKit. No headless browser, no coordinates.
   actions:
     - theme: brand
       text: Get started
       link: /guide/getting-started
+    - theme: alt
+      text: Try it
+      link: /editor/
+      target: _self
     - theme: alt
       text: API
       link: /api

@@ -1,7 +1,7 @@
 // A multi-page account statement: fifty rows, a logo, a table header that
 // repeats on every page, and a totals block that never straddles a page.
 import { writeFile } from "node:fs/promises";
-import { render, text, padding, row, column, image, divider, table } from "../src/index.js";
+import { render, validate, text, padding, row, column, image, divider, table } from "../src/index.js";
 
 const bold = "Helvetica-Bold";
 const money = (n: number) => (n < 0 ? `-€${(-n).toFixed(2)}` : `€${n.toFixed(2)}`);
@@ -65,6 +65,10 @@ const doc = column([
   ], { gap: 6, padding: 12, background: "#f2f2f2", margin: { top: 24 }, keep: true }),
 ]);
 
-const pdf = await render(doc, { defaultStyle: { size: 10 } });
+const options = { defaultStyle: { size: 10 } };
+
+// Check for mistakes that would render without complaint, then render.
+for (const f of validate(doc, options)) console.warn(`${f.level}: ${f.path}: ${f.message}`);
+const pdf = await render(doc, options);
 await writeFile("examples/statement.pdf", pdf);
 console.log(`wrote examples/statement.pdf (${pdf.length} bytes)`);

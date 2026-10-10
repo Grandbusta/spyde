@@ -11,6 +11,13 @@ function pageCount(pdf: Uint8Array): number {
   return (latin1(pdf).match(/\/Type \/Page[^s]/g) ?? []).length;
 }
 
+/** A document-info string. PDFKit writes each value as its own object and refers to it. */
+function infoField(pdf: Uint8Array, key: string): string | undefined {
+  const raw = latin1(pdf);
+  const ref = raw.match(new RegExp(`/${key} (\\d+) 0 R`))?.[1];
+  return ref === undefined ? undefined : raw.match(new RegExp(`\\n${ref} 0 obj\\n\\((.*)\\)\\nendobj`))?.[1];
+}
+
 function mediaBox(pdf: Uint8Array): string | undefined {
   return latin1(pdf).match(/\/MediaBox \[([^\]]+)\]/)?.[1];
 }
@@ -47,6 +54,27 @@ test("render: defaults are A4 with 40pt margins", async () => {
 test("render: explicit page size in points", async () => {
   const pdf = await render(text("hi"), { size: [300, 400] });
   assert.equal(mediaBox(pdf), "0 0 300 400");
+});
+
+test("render: the bytes go straight into a Response or a Blob, with no cast", async () => {
+  // Typed as backed by a plain ArrayBuffer: the DOM's Response and Blob types refuse a
+  // Uint8Array that might be shared memory. This line stops compiling if that loosens.
+  const pdf: Uint8Array<ArrayBuffer> = await render(text("hi"));
+  const res = new Response(pdf, { headers: { "content-type": "application/pdf" } });
+  assert.equal((await res.arrayBuffer()).byteLength, pdf.byteLength);
+  assert.equal(new Blob([pdf]).size, pdf.byteLength);
+});
+
+test("render: info is written into the PDF's document properties", async () => {
+  const pdf = await render(text("hi"), { info: { title: "Invoice F250129", author: "ACME Ltd", subject: "March", keywords: "invoice, acme" } });
+  assert.equal(infoField(pdf, "Title"), "Invoice F250129");
+  assert.equal(infoField(pdf, "Author"), "ACME Ltd");
+  assert.equal(infoField(pdf, "Subject"), "March");
+  assert.equal(infoField(pdf, "Keywords"), "invoice, acme");
+});
+
+test("render: without info there is no title", async () => {
+  assert.equal(infoField(await render(text("hi")), "Title"), undefined);
 });
 
 test("render: a column taller than the page continues on further pages", async () => {

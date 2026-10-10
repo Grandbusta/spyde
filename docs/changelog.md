@@ -4,6 +4,17 @@ description: "What changed in each Spyde release, including the breaking changes
 
 # Changelog
 
+## 0.3.0
+
+- A browser entry. Bundlers pick `dist/index.browser.js` through the package's `browser` export condition; the API is the same, fonts and images are passed as bytes. PDFKit's browser build and its standard fonts come along automatically.
+- `dist/spyde.browser.js`: the whole library in one file for a plain `<script type="module">` from a CDN, no bundler needed. See [In the browser](/guide/browser).
+- A live editor, linked from the documentation site: write a template, see the document as you type. It runs entirely in your browser and nothing is uploaded.
+- `render(tree, { info })`: title, author, subject, and keywords, written into the PDF's document properties.
+- `validate` reports two more silent mistakes: a `divider` with neither a width nor a height to span, which draws a one-point dot (a divider in a row inside a column, or in a column placed directly in a row), and a `spacer` in a row or column that is only as long as its content, where it does nothing.
+- The examples run `validate` before rendering and print what it finds.
+- `render` is typed as returning `Uint8Array<ArrayBuffer>`, so `new Response(pdf)` and `new Blob([pdf])` accept the bytes without a cast under TypeScript's DOM types. Only the type changed.
+- A Next.js example: a form with a live preview, and the PDF made in the browser or by a route handler.
+
 ## 0.2.1
 
 - `validate(tree, options?)`: reports the mistakes that render silently wrong, with a path into the tree and a fix in each message. Checks fill and spacer placement, `justify` alongside a fill, table keys that no row has (with a suggestion), empty columns, unregistered fonts, long text directly in a row, and `padding` on a table. Never throws, never renders.

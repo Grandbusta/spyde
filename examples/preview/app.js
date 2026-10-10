@@ -27,11 +27,15 @@ form.addEventListener("input", (e) => {
 
 // 2. Re-layout on a pause.
 let timer;
+let seq = 0;   // numbers each request, so a reply that arrives after a newer one is dropped
 function schedule() { clearTimeout(timer); timer = setTimeout(refresh, 150); }
 async function refresh() {
+  const mine = ++seq;
   status.textContent = "updating…";
   const res = await fetch("/preview", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(state) });
-  preview.innerHTML = await res.text();
+  const html = await res.text();
+  if (mine !== seq) return;
+  preview.innerHTML = html;
   status.textContent = `${preview.querySelectorAll(".spyde-page").length} page(s)`;
 }
 

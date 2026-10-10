@@ -1,7 +1,7 @@
 {
   "name": "@grandbusta/spyde",
-  "version": "0.2.1",
-  "description": "Declarative, composable PDF layout for Node on top of PDFKit. No browser.",
+  "version": "0.3.0",
+  "description": "Declarative, composable PDF layout on top of PDFKit, for Node and the browser. No headless browser.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -9,6 +9,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "browser": "./dist/index.browser.js",
       "default": "./dist/index.js"
     }
   },
@@ -38,16 +39,19 @@
     "typescript"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && npm run bundle",
+    "bundle": "esbuild dist/index.browser.js --bundle --format=esm --platform=browser --minify --legal-comments=eof --outfile=dist/spyde.browser.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsc -p tsconfig.test.json && node --test .test-out/test/",
+    "test": "npm run build && tsc -p tsconfig.test.json && node --test .test-out/test/",
     "clean": "rm -rf dist .test-out",
     "example": "tsc -p tsconfig.test.json && node .test-out/examples/invoice.js && node .test-out/examples/statement.js",
     "prepublishOnly": "npm run clean && npm run build && npm test",
     "preview": "tsc -p tsconfig.test.json && node .test-out/examples/preview/server.js",
     "docs:dev": "npm --prefix docs run dev",
     "docs:build": "npm --prefix docs run build",
-    "docs:preview": "npm --prefix docs run preview"
+    "docs:preview": "npm --prefix docs run preview",
+    "editor:dev": "npm run build && npm --prefix editor run dev",
+    "editor:build": "npm run build && npm --prefix editor run build"
   },
   "dependencies": {
     "pdfkit": "^0.20.2"
@@ -55,6 +59,7 @@
   "devDependencies": {
     "@types/node": "^20.19.43",
     "@types/pdfkit": "^0.17.6",
+    "esbuild": "^0.28.2",
     "typescript": "^7.0.2"
   },
   "publishConfig": {

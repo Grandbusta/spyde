@@ -1,6 +1,7 @@
 import type { Rect, Size } from "../core/geometry.js";
 import type { ResolvedTextStyle } from "../core/style.js";
 import { PdfKitRenderer, type PdfKitRendererOptions } from "./pdfkit.js";
+import type { Platform } from "./platform.js";
 import type { Renderer, TextMetrics } from "./renderer.js";
 
 /**
@@ -36,8 +37,8 @@ export class RecordingRenderer implements Renderer {
   /** Depth of `targets` at each save(), so restore() can close any clips since. */
   private saves: number[] = [];
 
-  constructor(options: PdfKitRendererOptions = {}) {
-    this.measurer = new PdfKitRenderer(options);
+  constructor(platform: Platform, options: PdfKitRendererOptions = {}) {
+    this.measurer = new PdfKitRenderer(platform, options);
     this.addPage();
   }
 

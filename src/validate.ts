@@ -1,6 +1,7 @@
 import type { Node } from "./core/node.js";
 import { BUILTIN_FONTS, type TextStyle } from "./core/style.js";
 import { BackgroundNode } from "./nodes/background.js";
+import { DividerNode } from "./nodes/divider.js";
 import { EmptyNode } from "./nodes/empty.js";
 import { FillNode } from "./nodes/fill.js";
 import { FlexNode } from "./nodes/flex.js";
@@ -31,9 +32,14 @@ export interface ValidateOptions {
  * nothing was found. Never throws and never renders.
  *
  * Checks: a fill or spacer that is not a direct child of a row or column;
- * justify on a row or column that also has a fill or spacer; a table column
- * whose key no row has, or with neither key nor format; a font that is
- * neither built in nor registered; long text placed directly in a row.
+ * a spacer in a row or column whose length is set by its content; a divider
+ * with no bounded width or height; justify on a row or column that also has
+ * a fill or spacer; a table column whose key no row has, or with neither key
+ * nor format; a font that is neither built in nor registered; long text
+ * placed directly in a row.
+ *
+ * The tree is checked as the root of a page, so the top node has the page's
+ * width and height to work in.
  */
 export function validate(tree: Node, options: ValidateOptions = {}): Finding[] {
   const findings: Finding[] = [];
@@ -46,13 +52,27 @@ export function validate(tree: Node, options: ValidateOptions = {}): Finding[] {
   };
   checkFont(options.defaultStyle, "render options", "defaultStyle");
 
-  const walk = (node: Node, path: string, parent: Node | undefined) => {
+  // `room` says which sides of the space a node is given are bounded. A row
+  // gives its non-fill children unbounded width and a column unbounded
+  // height; those children are as long as their content.
+  const walk = (node: Node, path: string, parent: Node | undefined, room: Room) => {
     if (node instanceof FillNode) {
       if (!(parent instanceof FlexNode)) {
         const name = node.child instanceof EmptyNode ? "spacer()" : "fill()";
         findings.push({ level: "error", path, message: `${name} has no effect here: it must be a direct child of a row or column. Move the wrapper inside the fill, e.g. fill(padding(x, 8)) rather than padding(fill(x), 8).` });
       }
-      walk(node.child, `${path} > ${kind(node.child)}`, node);
+      walk(node.child, `${path} > ${kind(node.child)}`, node, room);
+      return;
+    }
+    if (node instanceof DividerNode) {
+      if (!room.width && !room.height) {
+        const fix = parent instanceof FlexNode && parent.axis === "horizontal"
+          ? `Set align: "stretch" on the row so the divider takes the row's height.`
+          : parent instanceof FlexNode
+            ? `The column has no width of its own, usually because it sits directly in a row; wrap the column in fill() to give it one.`
+            : `Give it a length, e.g. width(divider(), 200).`;
+        findings.push({ level: "error", path, message: `divider() draws a 1-point dot here: neither its width nor its height is bounded, so it has no length to span. ${fix}` });
+      }
       return;
     }
     if (node instanceof TextNode) {
@@ -67,19 +87,41 @@ export function validate(tree: Node, options: ValidateOptions = {}): Finding[] {
       if (hasFill && node.options.justify !== undefined && node.options.justify !== "start") {
         findings.push({ level: "warning", path, message: `justify: "${node.options.justify}" is ignored because a child is a fill or spacer; fills already decide how the leftover space is used. Remove one or the other.` });
       }
-      node.children.forEach((c, i) => walk(c, `${path} > ${kind(c)}[${i}]`, node));
+      const across = node.axis === "horizontal";
+      const along = across ? room.width : room.height;
+      const stretched = node.options.align === "stretch";   // children are re-laid out at the cross size
+      node.children.forEach((c, i) => {
+        const cpath = `${path} > ${kind(c)}[${i}]`;
+        if (c instanceof FillNode && c.child instanceof EmptyNode && !along) {
+          findings.push({ level: "warning", path: cpath, message: across
+            ? `spacer() does nothing here: this row has no set width, so it is only as wide as its content and there is no leftover space to take. Wrap the row in fill() or width() to give it one.`
+            : `spacer() does nothing here: this column has no set height, so it is only as tall as its content and there is no leftover space to take. A column inside another column grows with its content; wrap it in fill() or height() to give it one.` });
+        }
+        const main = c instanceof FillNode && along;
+        const cross = stretched || (across ? room.height : room.width);
+        walk(c, cpath, node, across ? { width: main, height: cross } : { width: cross, height: main });
+      });
       return;
     }
     if (node instanceof TableNode) {
       checkTable(node, path, findings, checkFont);
       return;
     }
-    if (node instanceof PaddingNode || node instanceof BackgroundNode || node instanceof KeepNode || node instanceof SizedNode) {
-      walk(node.child, `${path} > ${kind(node.child)}`, node);
+    if (node instanceof SizedNode) {
+      walk(node.child, `${path} > ${kind(node.child)}`, node, { ...room, [node.axis]: true });
+      return;
+    }
+    if (node instanceof PaddingNode || node instanceof BackgroundNode || node instanceof KeepNode) {
+      walk(node.child, `${path} > ${kind(node.child)}`, node, room);
     }
   };
-  walk(tree, kind(tree), undefined);
+  walk(tree, kind(tree), undefined, { width: true, height: true });
   return findings;
+}
+
+interface Room {
+  width: boolean;
+  height: boolean;
 }
 
 function checkTable(

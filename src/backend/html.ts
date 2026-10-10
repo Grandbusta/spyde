@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import type { ResolvedTextStyle } from "../core/style.js";
 import type { DisplayList, Op } from "./recording.js";
 
@@ -20,9 +19,9 @@ export interface HtmlOptions {
  * PDFKit produced, with wrapping off, so the browser never re-wraps. All
  * text and attribute values are escaped; no user string becomes markup.
  */
-export function paintHtml(list: DisplayList, options: HtmlOptions = {}): string {
+export function paintHtml(list: DisplayList, options: HtmlOptions = {}, readFile?: (path: string) => Uint8Array): string {
   const prefix = options.classPrefix ?? "spyde";
-  const imageSrc = options.imageSrc ?? makeDataUriResolver();
+  const imageSrc = options.imageSrc ?? makeDataUriResolver(readFile);
   const styles = new StyleTable(prefix);
   for (const page of list) collectStyles(page.ops, styles);
 
@@ -140,17 +139,29 @@ export function cssFont(name: string): { family: string; weight: "normal" | "bol
   return { family, weight, style };
 }
 
-function makeDataUriResolver(): (src: string | Uint8Array) => string {
+function makeDataUriResolver(readFile?: (path: string) => Uint8Array): (src: string | Uint8Array) => string {
   const cache = new Map<string | Uint8Array, string>();
   return (src) => {
     const hit = cache.get(src);
     if (hit) return hit;
-    const bytes = typeof src === "string" ? new Uint8Array(readFileSync(src)) : src;
+    if (typeof src === "string" && !readFile) {
+      throw new Error(`Cannot read image "${src}": no file access here. Pass the image as bytes, or supply imageSrc to map it to a URL.`);
+    }
+    const bytes = typeof src === "string" ? readFile!(src) : src;
     const mime = bytes[0] === 0x89 && bytes[1] === 0x50 ? "image/png" : bytes[0] === 0xff && bytes[1] === 0xd8 ? "image/jpeg" : "application/octet-stream";
-    const uri = `data:${mime};base64,${Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).toString("base64")}`;
+    const uri = `data:${mime};base64,${toBase64(bytes)}`;
     cache.set(src, uri);
     return uri;
   };
+}
+
+/** Base64 without Node's Buffer, so it runs in a browser too. */
+function toBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
 }
 
 function pt(n: number): string {
